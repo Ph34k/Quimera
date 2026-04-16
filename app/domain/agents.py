@@ -1,5 +1,22 @@
+import socket
+import ipaddress
+from urllib.parse import urlparse
 from abc import ABC, abstractmethod
 from typing import Dict, Any
+
+def is_safe_url(url: str) -> bool:
+    """Security check to prevent SSRF by blocking internal IPs."""
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"): return False
+        if not parsed.hostname: return False
+        ip = socket.gethostbyname(parsed.hostname)
+        ip_obj = ipaddress.ip_address(ip)
+        if ip_obj.is_loopback or ip_obj.is_private or ip_obj.is_link_local or ip_obj.is_multicast:
+            return False
+        return True
+    except Exception:
+        return False
 
 class BaseAgent(ABC):
     """Abstract Base Class for all Quimera Agents."""
@@ -19,6 +36,8 @@ class IScoutAgent(BaseAgent):
         target_url = payload.get("target_url")
         if not target_url:
             raise ValueError("target_url is required for ScoutAgent")
+        if not is_safe_url(target_url):
+            raise ValueError("Invalid or unsafe target_url")
 
         try:
             # MVP: Real HTTP request instead of mock
@@ -84,6 +103,8 @@ class IExecutionAgent(BaseAgent):
         target_url = payload.get("target_url")
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
+        if not is_safe_url(target_url):
+            raise ValueError("Invalid or unsafe target_url")
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
