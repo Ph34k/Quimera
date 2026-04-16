@@ -1,0 +1,4 @@
+## 2024-04-16 - [Critical] Server-Side Request Forgery (SSRF) in Outbound Agents
+**Vulnerability:** User-provided URLs for Scout and Execution agents were directly passed into `httpx.get` without validation, allowing SSRF. Execution agent also followed redirects.
+**Learning:** Architecture relying heavily on specialized web scraping/interaction agents (Scout/Execution) inherently exposes the system to SSRF. Malicious users can force the internal agents to map local network topographies or extract cloud instance metadata (like AWS `169.254.169.254`).
+**Prevention:** Implement an IP resolution and validation mechanism (`is_safe_url` checking for private, loopback, multicast, or link-local ranges) before ANY external call. Additionally, always disable `follow_redirects` for agents navigating user-supplied inputs to prevent bypass mechanisms.
