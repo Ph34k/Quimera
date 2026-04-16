@@ -1,0 +1,135 @@
+{
+  "applets": [{
+    "lastAccessTime": "2025-11-09T04:01:44.063031Z",
+    "firstAccessTime": "2025-11-09T04:01:44.063031Z",
+    "source": {
+      "drive": {
+        "resourceId": "1qRWCp5oP3VNRCGsp17CGLvqudjeZL-j9",
+        "revisionId": "0B1gXJeR-pDzKRmxuVVhaYXVNcjcyRlp3c281N0k1M2F5dlMwPQ"
+      }
+    },
+    "name": "Projeto Quimera GUI",
+    "description": "A dashboard for visualizing and managing social prospecting profiles. It provides detailed profile analysis, including personality traits, interests, and engagement scores, along with tools for interaction."
+  }, {
+    "lastAccessTime": "2025-10-24T12:11:51.188805Z",
+    "firstAccessTime": "2025-06-29T22:20:49.509864Z",
+    "source": {
+      "sourceType": "BUNDLED",
+      "bundled": {
+        "id": "live_audio"
+      }
+    },
+    "name": "Audio Orb",
+    "description": "Speak, and the orb responds. An interactive experience powered by the Live Audio API."
+  }, {
+    "lastAccessTime": "2025-10-11T13:18:53.525968Z",
+    "firstAccessTime": "2025-09-25T17:44:05.272125Z",
+    "source": {
+      "drive": {
+        "resourceId": "1XkpU8QpiBTmBUSCyQkdG7rJ1BJm8UUs_",
+        "revisionId": "0B1gXJeR-pDzKajFDRFFxWGNlLzBBbTMwa0ZMeWhCTjNiMzljPQ"
+      }
+    },
+    "name": "Architectural \u0026 Ethical AI Analysis",
+    "description": "An interactive web application that presents a deep-dive analysis of the architecture, ethics, and implementation of a conceptual automated social engagement AI system."
+  }, {
+    "lastAccessTime": "2025-10-11T13:18:42.349893Z",
+    "firstAccessTime": "2025-10-11T10:56:54.709462Z",
+    "source": {
+      "drive": {
+        "resourceId": "1H3SlXZxiQrdhkjntpinHreS6tb0TPQZD",
+        "revisionId": "0B1gXJeR-pDzKZDQvL3owUTNqUXErOGQvRW1rTStUS0huSU1RPQ"
+      }
+    },
+    "name": "Quimera Dashboard",
+    "description": "A dashboard for configuring, monitoring metrics, and managing the handoff process for the Quimera automated social prospecting system."
+  }, {
+    "lastAccessTime": "2025-10-11T12:13:17.363693Z",
+    "firstAccessTime": "2025-10-11T12:13:17.363693Z",
+    "source": {
+      "drive": {
+        "resourceId": "1RRnOx4s9-NEEdW_JnfiG7BGaPp5Ntrpp",
+        "revisionId": "0B1gXJeR-pDzKRGlPTHZPdlJVTjZ6YzZvcTJjMldLZlFNM3IwPQ"
+      }
+    },
+    "name": "AI Image Text Extractor",
+    "description": "An elegant web application that leverages Google\u0027s Gemini AI to extract text from uploaded images. It provides a side-by-side view of your image and the high-fidelity text output, preserving original formatting."
+  }, {
+    "lastAccessTime": "2025-10-11T10:48:44.044804Z",
+    "firstAccessTime": "2025-09-25T17:46:29.805750Z",
+    "source": {
+      "drive": {
+        "resourceId": "1v3gAShnJNA4xOk-7_jayy8cN2jQRWOts",
+        "revisionId": "0B1gXJeR-pDzKVktTa1lEZnBiS0sxUENwN095aVpTeUx2MVE4PQ"
+      }
+    },
+    "name": "Ethical AI Communication Assistant",
+    "description": "An AI-powered assistant designed to help users improve their online profiles and craft authentic, respectful conversation starters, promoting genuine connections based on shared interests."
+  }, {
+    "lastAccessTime": "2025-09-26T01:24:52.528736Z",
+    "firstAccessTime": "2025-09-26T01:24:52.528736Z",
+    "source": {
+      "drive": {
+        "resourceId": "1lGThrLZEGgIhiHe5QoUFcm7EbESICP6d",
+        "revisionId": "0B1gXJeR-pDzKNDh4MWN2NUx5TUJhMWVyU1BPQXAvU0lBRG9BPQ"
+      }
+    },
+    "name": "MediaSim",
+    "description": "Create and simulate generative media with the latest Veo 3 Fast and GenMedia models using tldraw canvas to explore different workfflows"
+  }, {
+    "lastAccessTime": "2025-09-26T01:17:31.020202Z",
+    "firstAccessTime": "2025-09-26T00:40:17.158012Z",
+    "source": {
+      "sourceType": "BUNDLED",
+      "bundled": {
+        "id": "mediasim"
+      }
+    },
+    "name": "MediaSim",
+    "description": "Create and simulate generative media with the latest Veo 3 Fast and GenMedia models using tldraw canvas to explore different workfflows"
+  }, {
+    "lastAccessTime": "2025-09-04T09:40:08.308400Z",
+    "firstAccessTime": "2025-06-17T05:51:46.643620Z",
+    "source": {
+      "sourceType": "BUNDLED",
+      "bundled": {
+        "id": "video-to-learning-app"
+      }
+    },
+    "name": "Video to Learning App",
+    "description": "Instantly turn YouTube videos into fun learning apps using AI. Explore concepts visually and learn actively!"
+  }, {
+    "lastAccessTime": "2025-06-29T22:26:23.644436Z",
+    "firstAccessTime": "2025-06-29T22:22:03.736056Z",
+    "source": {
+      "sourceType": "BUNDLED",
+      "bundled": {
+        "id": "thinking_space"
+      }
+    },
+    "name": "Thinking Space",
+    "description": "Search a custom set of images using natural language."
+  }, {
+    "lastAccessTime": "2025-06-29T22:23:24.370557Z",
+    "firstAccessTime": "2025-06-29T22:23:24.370557Z",
+    "source": {
+      "sourceType": "BUNDLED",
+      "bundled": {
+        "id": "promptdj-midi"
+      }
+    },
+    "name": "PromptDJ MIDI",
+    "description": "Control real time music with a MIDI controller."
+  }, {
+    "lastAccessTime": "2025-06-29T22:22:34.102285Z",
+    "firstAccessTime": "2025-06-29T22:22:34.102285Z",
+    "source": {
+      "sourceType": "BUNDLED",
+      "bundled": {
+        "id": "gemini-dictation"
+      }
+    },
+    "name": "Dictation App",
+    "description": "Effortless dictation powered by Gemini. Turn long rambling recordings into perfectly transcribed notes."
+  }]
+}
