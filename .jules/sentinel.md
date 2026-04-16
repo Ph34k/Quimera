@@ -1,0 +1,4 @@
+## 2023-10-27 - [Fix SSRF Vulnerability in Agents]
+**Vulnerability:** IScoutAgent and IExecutionAgent were performing HTTP GET requests using `httpx` with unvalidated user input URLs, which enabled Server-Side Request Forgery (SSRF) against internal network services (like localhost databases or AWS metadata APIs).
+**Learning:** External inputs mapped directly to internal API calls must always be validated to prevent unauthorized internal network access and local resource enumeration. The Quimera architecture allows direct external HTTP calls via user-provided `target_url` parameters without restrictions.
+**Prevention:** I implemented an `is_safe_url` helper to resolve hostnames and explicitly block private, loopback, link-local, and multicast IP ranges before processing the `httpx.get` calls in both agents. Ensure any new agents validating arbitrary URLs also inherit or use this validation check.

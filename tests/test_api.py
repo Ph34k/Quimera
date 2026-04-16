@@ -68,3 +68,17 @@ def test_learning_agent():
     response2 = client.post("/api/v1/learning/check", json=payload)
     data2 = response2.json()["result"]
     assert data2["is_safe_to_engage"] is False
+
+def test_ssrf_prevention():
+    payload = {
+        "target_url": "http://localhost:9200",
+        "depth": 1
+    }
+    response = client.post("/api/v1/scout/mission", json=payload)
+    assert response.status_code == 500
+    assert "Invalid or unsafe target_url" in response.json()["detail"]
+
+    exec_payload = {"payload": {"action": "ping", "target_url": "file:///etc/passwd"}}
+    exec_response = client.post("/api/v1/execution/run", json=exec_payload)
+    assert exec_response.status_code == 400
+    assert "Invalid or unsafe target_url" in exec_response.json()["detail"]
