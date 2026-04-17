@@ -29,6 +29,31 @@ def test_scout_mission_dispatch():
     assert data["http_status"] == 200
     assert data["content_length"] > 0
 
+def test_scout_mission_ssrf_protection():
+    payload = {
+        "target_url": "http://127.0.0.1/admin",
+        "depth": 1
+    }
+    response = client.post("/api/v1/scout/mission", json=payload)
+    assert response.status_code == 500
+    assert "URL safety check failed" in response.json()["detail"]
+
+    payload = {
+        "target_url": "http://0.0.0.0/admin",
+        "depth": 1
+    }
+    response = client.post("/api/v1/scout/mission", json=payload)
+    assert response.status_code == 500
+    assert "URL safety check failed" in response.json()["detail"]
+
+    payload = {
+        "target_url": "file:///etc/passwd",
+        "depth": 1
+    }
+    response = client.post("/api/v1/scout/mission", json=payload)
+    assert response.status_code == 500
+    assert "URL safety check failed" in response.json()["detail"]
+
 def test_analyst_agent():
     payload = {"payload": {"text": "hello world from analyst test the test"}}
     response = client.post("/api/v1/analyst/process", json=payload)

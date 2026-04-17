@@ -10,6 +10,29 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import urllib.parse
+import socket
+import ipaddress
+
+def validate_url_safety(url: str) -> None:
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError("Invalid URL scheme")
+        hostname = parsed.hostname
+        if not hostname:
+            raise ValueError("No hostname in URL")
+
+        # Use getaddrinfo to support both IPv4 and IPv6
+        addrs = socket.getaddrinfo(hostname, None)
+
+        for addr in addrs:
+            ip = addr[4][0]
+            ip_obj = ipaddress.ip_address(ip)
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+                raise ValueError("URL safety check failed")
+    except Exception:
+        raise ValueError("URL safety check failed")
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -19,6 +42,8 @@ class IScoutAgent(BaseAgent):
         target_url = payload.get("target_url")
         if not target_url:
             raise ValueError("target_url is required for ScoutAgent")
+
+        validate_url_safety(target_url)
 
         try:
             # MVP: Real HTTP request instead of mock
