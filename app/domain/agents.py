@@ -10,6 +10,7 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+from app.core.security import is_safe_url
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -19,6 +20,15 @@ class IScoutAgent(BaseAgent):
         target_url = payload.get("target_url")
         if not target_url:
             raise ValueError("target_url is required for ScoutAgent")
+
+        # 🛡️ Sentinel Security: Prevent SSRF
+        if not is_safe_url(target_url):
+            return {
+                "status": "failed",
+                "mission_id": str(uuid.uuid4()),
+                "target": target_url,
+                "error": "Security Error: Blocked SSRF attempt. Invalid or internal URL."
+            }
 
         try:
             # MVP: Real HTTP request instead of mock
@@ -84,6 +94,10 @@ class IExecutionAgent(BaseAgent):
         target_url = payload.get("target_url")
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
+
+        # 🛡️ Sentinel Security: Prevent SSRF
+        if not is_safe_url(target_url):
+            return {"status": "execution_failed", "error": "Security Error: Blocked SSRF attempt. Invalid or internal URL."}
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
