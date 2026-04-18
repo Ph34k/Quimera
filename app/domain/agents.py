@@ -10,6 +10,21 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import urllib.parse
+import ipaddress
+import socket
+
+def is_safe_url(url: str) -> bool:
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme not in ("http", "https"): return False
+        if not parsed.hostname: return False
+        ip = socket.gethostbyname(parsed.hostname)
+        ip_obj = ipaddress.ip_address(ip)
+        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local: return False
+        return True
+    except Exception:
+        return False
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -20,9 +35,14 @@ class IScoutAgent(BaseAgent):
         if not target_url:
             raise ValueError("target_url is required for ScoutAgent")
 
+        # Security: Prevent Server-Side Request Forgery (SSRF) by validating
+        # the URL is not pointing to an internal or private IP address.
+        if not is_safe_url(target_url):
+            raise ValueError("Unsafe target_url provided")
+
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            response = httpx.get(target_url, timeout=5.0, follow_redirects=False)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -85,9 +105,14 @@ class IExecutionAgent(BaseAgent):
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
 
+        # Security: Prevent Server-Side Request Forgery (SSRF) by validating
+        # the URL is not pointing to an internal or private IP address.
+        if not is_safe_url(target_url):
+            raise ValueError("Unsafe target_url provided")
+
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=False)
             return {
                 "status": "execution_successful",
                 "action": action,
