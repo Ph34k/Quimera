@@ -10,6 +10,63 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import socket
+from urllib.parse import urlparse
+import ipaddress
+
+def safe_http_get(url: str, headers: Dict[str, str] = None, timeout: float = 5.0, max_redirects: int = 5) -> httpx.Response:
+    """Faz um GET seguro, seguindo redirects manualmente e validando cada URL para prevenir SSRF via Redirect."""
+    current_url = url
+    redirects_followed = 0
+
+    with httpx.Client(timeout=timeout) as client:
+        while redirects_followed <= max_redirects:
+            if not is_safe_url(current_url):
+                raise ValueError(f"Invalid or unsafe target_url provided (at redirect depth {redirects_followed})")
+
+            response = client.get(current_url, headers=headers, follow_redirects=False)
+
+            if 300 <= response.status_code < 400 and "Location" in response.headers:
+                next_url = response.headers["Location"]
+                # Handle relative redirects
+                parsed_next = urlparse(next_url)
+                if not parsed_next.netloc:
+                    from urllib.parse import urljoin
+                    next_url = urljoin(current_url, next_url)
+
+                current_url = next_url
+                redirects_followed += 1
+            else:
+                return response
+
+        raise Exception("Too many redirects")
+
+def is_safe_url(url: str) -> bool:
+    """Valida a URL para prevenir Server-Side Request Forgery (SSRF)."""
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return False
+
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+
+        # Resolve the hostname to all IP addresses (IPv4 and IPv6)
+        addr_info = socket.getaddrinfo(hostname, None)
+
+        for res in addr_info:
+            ip_str = res[4][0]
+            ip = ipaddress.ip_address(ip_str)
+
+            # Block loopback, private, link-local, multicast, and other non-global IPs
+            if (ip.is_loopback or ip.is_private or ip.is_reserved or
+                ip.is_multicast or ip.is_link_local or not ip.is_global):
+                return False
+
+        return True
+    except Exception:
+        return False
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -20,9 +77,10 @@ class IScoutAgent(BaseAgent):
         if not target_url:
             raise ValueError("target_url is required for ScoutAgent")
 
+        # is_safe_url is now checked inside safe_http_get
         try:
-            # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # MVP: Real HTTP request instead of mock, with SSRF protection
+            response = safe_http_get(target_url, timeout=5.0)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -85,9 +143,10 @@ class IExecutionAgent(BaseAgent):
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
 
+        # is_safe_url is now checked inside safe_http_get
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            resp = safe_http_get(target_url, headers=headers, timeout=5.0)
             return {
                 "status": "execution_successful",
                 "action": action,
