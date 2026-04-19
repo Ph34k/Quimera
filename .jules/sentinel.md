@@ -1,0 +1,4 @@
+## 2024-05-19 - [CRITICAL] Prevent SSRF in AI Agents
+**Vulnerability:** Agents `IScoutAgent` and `IExecutionAgent` in `app/domain/agents.py` accepted any URL without validation and executed HTTP requests against them, and also followed redirects. This allows attackers to perform Server-Side Request Forgery (SSRF) and probe internal network addresses or access sensitive cloud metadata services.
+**Learning:** We must not blindly trust user-supplied URLs even when executing "scout" or "execution" actions designed to hit external sites.
+**Prevention:** Always validate user-provided URLs using `urllib.parse` and `ipaddress` to verify the resolved IP is not private, loopback, or link-local. Disable automatic redirects (`follow_redirects=False` in HTTP clients) as an attacker can redirect a safe-looking external URL to an internal one.
