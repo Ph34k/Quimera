@@ -1,0 +1,4 @@
+## 2024-05-16 - SSRF Vulnerability in Quimera Agents
+**Vulnerability:** Agents (`IScoutAgent` and `IExecutionAgent`) accepted arbitrary `target_url` parameters and used them to make `httpx.get` calls without validating the resolved IP address, and `IExecutionAgent` explicitly allowed `follow_redirects=True`.
+**Learning:** This allowed an attacker to map internal networks (like `127.0.0.1` or AWS metadata endpoints) via the API and bypass basic network perimeter defenses, compounded by allowing redirects which could be abused to bypass initial domain whitelisting.
+**Prevention:** Implemented an `is_safe_url` utility to resolve standard hostnames and block private/loopback/link-local address spaces. Additionally, `follow_redirects=False` was set on security-sensitive HTTP requests by default.
