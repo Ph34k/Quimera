@@ -10,6 +10,41 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import urllib.parse
+import socket
+import ipaddress
+
+def is_safe_url(url: str) -> bool:
+    """
+    Validates user-provided URLs to prevent Server-Side Request Forgery (SSRF).
+    Blocks private, loopback, link-local, and unspecified IP ranges.
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+
+        # Resolve hostname to IP
+        # We need to handle both direct IP inputs and domain names
+        # Note: socket.getaddrinfo returns a list of 5-tuples
+        addr_info = socket.getaddrinfo(hostname, None)
+
+        for info in addr_info:
+            ip_str = info[4][0]
+            ip_obj = ipaddress.ip_address(ip_str)
+
+            if (ip_obj.is_private or
+                ip_obj.is_loopback or
+                ip_obj.is_link_local or
+                ip_obj.is_unspecified or
+                ip_obj.is_multicast):
+                return False
+
+        return True
+    except Exception:
+        # If any parsing or resolution fails, fail closed (deny)
+        return False
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -20,9 +55,13 @@ class IScoutAgent(BaseAgent):
         if not target_url:
             raise ValueError("target_url is required for ScoutAgent")
 
+        # Security Enhancement: Prevent SSRF by validating the target URL
+        if not is_safe_url(target_url):
+            raise ValueError(f"target_url '{target_url}' is not a safe URL (SSRF prevention)")
+
         try:
-            # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # MVP: Real HTTP request instead of mock. Disable redirects to prevent SSRF bypass
+            response = httpx.get(target_url, timeout=5.0, follow_redirects=False)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -85,8 +124,13 @@ class IExecutionAgent(BaseAgent):
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
 
+        # Security Enhancement: Prevent SSRF by validating the target URL
+        if not is_safe_url(target_url):
+            raise ValueError(f"target_url '{target_url}' is not a safe URL (SSRF prevention)")
+
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
+            # follow_redirects=True is explicitly kept for Stealth web driving functionality per agent memory instructions
             resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
             return {
                 "status": "execution_successful",
