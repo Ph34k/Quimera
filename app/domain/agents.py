@@ -1,3 +1,38 @@
+import socket
+import ipaddress
+from urllib.parse import urlparse
+
+def is_safe_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            return False
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+
+        try:
+            ip_obj = ipaddress.ip_address(hostname.strip("[]"))
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+                return False
+            return True
+        except ValueError:
+            pass
+
+        try:
+            addr_info = socket.getaddrinfo(hostname, None)
+            for item in addr_info:
+                ip = item[4][0]
+                ip_obj = ipaddress.ip_address(ip)
+                if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+                    return False
+        except socket.gaierror:
+            pass
+
+        return True
+    except Exception:
+        return False
+
 from abc import ABC, abstractmethod
 from typing import Dict, Any
 
@@ -9,6 +44,11 @@ class BaseAgent(ABC):
         pass
 
 import httpx
+def _validate_request(request: httpx.Request) -> None:
+    # URL is already fully resolved absolute URL
+    if not is_safe_url(str(request.url)):
+        raise ValueError(f"Unsafe request URL detected: {request.url}. Request blocked to prevent SSRF.")
+
 import uuid
 
 class IScoutAgent(BaseAgent):
@@ -20,9 +60,12 @@ class IScoutAgent(BaseAgent):
         if not target_url:
             raise ValueError("target_url is required for ScoutAgent")
 
+        if not is_safe_url(target_url):
+            raise ValueError("Unsafe target_url detected. Request blocked to prevent SSRF.")
+
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            response = httpx.get(target_url, timeout=5.0, follow_redirects=False)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -85,9 +128,13 @@ class IExecutionAgent(BaseAgent):
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
 
+        if not is_safe_url(target_url):
+            raise ValueError("Unsafe target_url detected. Request blocked to prevent SSRF.")
+
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            with httpx.Client(follow_redirects=True, event_hooks={'request': [_validate_request]}) as client:
+                resp = client.get(target_url, headers=headers, timeout=5.0)
             return {
                 "status": "execution_successful",
                 "action": action,
