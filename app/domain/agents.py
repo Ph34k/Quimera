@@ -10,6 +10,29 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import socket
+import ipaddress
+from urllib.parse import urlparse
+
+def is_safe_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+
+        # Resolve the hostname to all possible IP addresses (IPv4 and IPv6)
+        # Using socket.getaddrinfo to handle IPv6 properly and mitigate DNS rebinding somewhat by checking all returned IPs
+        addr_infos = socket.getaddrinfo(hostname, None)
+        for addr_info in addr_infos:
+            ip_str = addr_info[4][0]
+            ip_obj = ipaddress.ip_address(ip_str)
+            if (ip_obj.is_private or ip_obj.is_loopback or
+                ip_obj.is_link_local or ip_obj.is_unspecified):
+                return False
+        return True
+    except Exception:
+        return False
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -21,8 +44,11 @@ class IScoutAgent(BaseAgent):
             raise ValueError("target_url is required for ScoutAgent")
 
         try:
+            if not is_safe_url(target_url):
+                raise ValueError("Target URL is not safe (blocked private/local IP)")
+
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            response = httpx.get(target_url, timeout=5.0, follow_redirects=False)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,6 +113,9 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
+            if not is_safe_url(target_url):
+                raise ValueError("Target URL is not safe (blocked private/local IP)")
+
             resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
             return {
                 "status": "execution_successful",
