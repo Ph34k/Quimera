@@ -10,6 +10,35 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import socket
+import ipaddress
+import urllib.parse
+
+def is_safe_url(url: str) -> bool:
+    """Mitigates SSRF by validating IPs."""
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme not in ("http", "https") or not parsed.hostname:
+            return False
+
+        # Validate IPv4 and IPv6
+        for res in socket.getaddrinfo(parsed.hostname, parsed.port):
+            ip = ipaddress.ip_address(res[4][0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_unspecified:
+                return False
+        return True
+    except Exception:
+        return False
+
+def verify_redirect(response: httpx.Response):
+    """Event hook to validate redirects against SSRF."""
+    if response.is_redirect:
+        location = response.headers.get("location")
+        if location:
+            # Handle relative redirects by joining with current URL
+            next_url = urllib.parse.urljoin(str(response.url), location)
+            if not is_safe_url(next_url):
+                raise ValueError(f"Unsafe redirect URL blocked: {next_url}")
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -21,8 +50,9 @@ class IScoutAgent(BaseAgent):
             raise ValueError("target_url is required for ScoutAgent")
 
         try:
-            # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            if not is_safe_url(target_url):
+                raise ValueError("Unsafe URL")
+            response = httpx.get(target_url, timeout=5.0, follow_redirects=False)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +117,10 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            if not is_safe_url(target_url):
+                raise ValueError("Unsafe URL")
+            with httpx.Client(event_hooks={'response': [verify_redirect]}, follow_redirects=True) as http_client:
+                resp = http_client.get(target_url, headers=headers, timeout=5.0)
             return {
                 "status": "execution_successful",
                 "action": action,
