@@ -1,0 +1,3 @@
+## 2024-04-21 - HTTP Connection Pooling for Quimera Agents
+**Learning:** The `IScoutAgent` and `IExecutionAgent` were creating new HTTP connections for every request, creating a significant performance bottleneck due to SSL handshakes and connection overhead, specific to this architecture where agents fire off numerous distinct outbound calls.
+**Action:** Always instantiate HTTP clients (e.g., `httpx.Client`) persistently within the agent's class instance (e.g., via `__init__`) instead of using convenience functions like `httpx.get` inside the `execute` method to leverage connection pooling and connection keep-alive.
