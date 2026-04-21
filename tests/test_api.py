@@ -57,6 +57,24 @@ def test_scribe_agent():
     assert response.status_code == 400
     assert "Cannot run actual Scribe logic" in response.json()["detail"]
 
+def test_ssrf_protection():
+    payload = {
+        "target_url": "http://127.0.0.1/",
+        "depth": 2
+    }
+    response = client.post("/api/v1/scout/mission", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "failed"
+    assert "Target URL is not safe" in data["error"]
+
+    payload_exec = {"payload": {"action": "ping", "target_url": "http://169.254.169.254/latest/meta-data/"}}
+    response_exec = client.post("/api/v1/execution/run", json=payload_exec)
+    assert response_exec.status_code == 200
+    data_exec = response_exec.json()["result"]
+    assert data_exec["status"] == "execution_failed"
+    assert "Target URL is not safe" in data_exec["error"]
+
 def test_learning_agent():
     payload = {"payload": {"target_id": "user_42"}}
     response = client.post("/api/v1/learning/check", json=payload)
