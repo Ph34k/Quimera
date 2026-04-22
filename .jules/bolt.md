@@ -1,0 +1,3 @@
+## 2024-05-18 - Agent Singleton Architecture enabling Connection Pooling
+**Learning:** Agents in Projeto Quimera (`app/domain/agents.py`) are instantiated as singletons in `app/api/router.py`. This architectural pattern means we can use persistent connection pools (like initializing `httpx.Client()` in the agent's `__init__` method) rather than creating ephemeral connections for each execute call.
+**Action:** Always check if classes are singletons before optimizing I/O bound tasks. When they are, convert ephemeral connections (like `httpx.get`) to persistent connection pools (like `httpx.Client`) initialized in the class constructor to save TCP/TLS handshake overhead on repeated connections.
