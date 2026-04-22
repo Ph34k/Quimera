@@ -10,6 +10,45 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import urllib.parse
+import socket
+import ipaddress
+
+def verify_redirect(response: httpx.Response):
+    """
+    Hook to verify the location header on redirect responses.
+    """
+    if response.is_redirect:
+        location = response.headers.get("Location")
+        if location:
+            # Resolve relative redirects using response.url
+            redirect_url = urllib.parse.urljoin(str(response.url), location)
+            if not is_safe_url(redirect_url):
+                raise ValueError(f"Unsafe redirect URL detected: {redirect_url}")
+
+def is_safe_url(url: str) -> bool:
+    """
+    Validates that a URL is safe to fetch, mitigating SSRF.
+    Checks scheme and ensures resolved IPs are not private, loopback, link-local, or unspecified.
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return False
+
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+
+        addr_info = socket.getaddrinfo(hostname, None)
+        for info in addr_info:
+            ip_str = info[4][0]
+            ip_obj = ipaddress.ip_address(ip_str)
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+                return False
+        return True
+    except Exception:
+        return False
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -19,6 +58,9 @@ class IScoutAgent(BaseAgent):
         target_url = payload.get("target_url")
         if not target_url:
             raise ValueError("target_url is required for ScoutAgent")
+
+        if not is_safe_url(target_url):
+            raise ValueError("Unsafe URL detected")
 
         try:
             # MVP: Real HTTP request instead of mock
@@ -79,15 +121,27 @@ class IExecutionAgent(BaseAgent):
     """Agente de Execução (Execution)
     Responsibility: Real Stealth web driving (via HTTPx with advanced headers).
     """
+
+    def __init__(self):
+        super().__init__()
+        self.client = httpx.Client(
+            event_hooks={'response': [verify_redirect]},
+            follow_redirects=True,
+            timeout=5.0
+        )
+
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         action = payload.get("action")
         target_url = payload.get("target_url")
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
 
+        if not is_safe_url(target_url):
+            raise ValueError("Unsafe URL detected")
+
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            resp = self.client.get(target_url, headers=headers)
             return {
                 "status": "execution_successful",
                 "action": action,

@@ -45,6 +45,21 @@ def test_execution_agent():
     assert data["status"] == "execution_successful"
     assert data["target_http_status"] == 200
 
+def test_scout_agent_ssrf_protection():
+    payload = {
+        "target_url": "http://127.0.0.1/admin",
+        "depth": 1
+    }
+    response = client.post("/api/v1/scout/mission", json=payload)
+    assert response.status_code == 500
+    assert "Unsafe URL detected" in response.json()["detail"]
+
+def test_execution_agent_ssrf_protection():
+    payload = {"payload": {"action": "ping", "target_url": "http://192.168.1.1/secret"}}
+    response = client.post("/api/v1/execution/run", json=payload)
+    assert response.status_code == 400
+    assert "Unsafe URL detected" in response.json()["detail"]
+
 def test_persuasion_agent():
     payload = {"payload": {"trigger": "social_proof", "context": "testing"}}
     response = client.post("/api/v1/persuasion/generate", json=payload)
