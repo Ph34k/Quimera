@@ -1,5 +1,21 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any
+import ipaddress
+import socket
+from urllib.parse import urlparse
+
+def is_safe_url(url: str) -> bool:
+    try:
+        hostname = urlparse(url).hostname
+        if not hostname:
+            return False
+        for info in socket.getaddrinfo(hostname, None):
+            ip = ipaddress.ip_address(info[4][0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_unspecified:
+                return False
+        return True
+    except Exception:
+        return False
 
 class BaseAgent(ABC):
     """Abstract Base Class for all Quimera Agents."""
@@ -19,6 +35,8 @@ class IScoutAgent(BaseAgent):
         target_url = payload.get("target_url")
         if not target_url:
             raise ValueError("target_url is required for ScoutAgent")
+        if not is_safe_url(target_url):
+            raise ValueError("Unsafe target_url provided")
 
         try:
             # MVP: Real HTTP request instead of mock
@@ -84,10 +102,17 @@ class IExecutionAgent(BaseAgent):
         target_url = payload.get("target_url")
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
+        if not is_safe_url(target_url):
+            raise ValueError("Unsafe target_url provided")
+
+        def verify_request(request: httpx.Request):
+            if not is_safe_url(str(request.url)):
+                raise ValueError("Unsafe URL or redirect detected")
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            with httpx.Client(event_hooks={'request': [verify_request]}) as client_http:
+                resp = client_http.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
             return {
                 "status": "execution_successful",
                 "action": action,
