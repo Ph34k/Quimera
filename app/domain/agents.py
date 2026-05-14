@@ -8,13 +8,53 @@ class BaseAgent(ABC):
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         pass
 
+import socket
+import ipaddress
+import urllib.parse
 import httpx
 import uuid
+
+
+def is_safe_url(url: str) -> bool:
+    try:
+        parsed = urllib.parse.urlparse(url)
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+
+        # Resolve to IP to prevent DNS rebinding
+        addr_info = socket.getaddrinfo(hostname, None)
+        for _, _, _, _, sockaddr in addr_info:
+            ip_str = sockaddr[0]
+            ip_obj = ipaddress.ip_address(ip_str)
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+                return False
+        return True
+    except Exception:
+        return False
+
+def verify_request(request: httpx.Request):
+    if not is_safe_url(str(request.url)):
+        raise httpx.RequestError(f"Security Policy Violation: URL {request.url} resolves to a restricted IP address.", request=request)
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
     Responsibility: OSINT, Web Scraping, Target Identification
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.client = httpx.Client(
+            timeout=5.0,
+            event_hooks={'request': [verify_request]}
+        )
+
+    def __del__(self):
+        try:
+            self.client.close()
+        except Exception:
+            pass
+
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         target_url = payload.get("target_url")
         if not target_url:
@@ -22,7 +62,7 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            response = self.client.get(target_url)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -79,15 +119,31 @@ class IExecutionAgent(BaseAgent):
     """Agente de Execução (Execution)
     Responsibility: Real Stealth web driving (via HTTPx with advanced headers).
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+        self.client = httpx.Client(
+            headers=headers,
+            timeout=5.0,
+            follow_redirects=True,
+            event_hooks={'request': [verify_request]}
+        )
+
+    def __del__(self):
+        try:
+            self.client.close()
+        except Exception:
+            pass
+
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         action = payload.get("action")
         target_url = payload.get("target_url")
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
 
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            resp = self.client.get(target_url)
             return {
                 "status": "execution_successful",
                 "action": action,
