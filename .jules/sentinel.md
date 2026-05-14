@@ -1,0 +1,4 @@
+## 2024-05-14 - Fix SSRF Vulnerability in Agent Web Scraping
+**Vulnerability:** IScoutAgent and IExecutionAgent were blindly resolving and fetching user-supplied URLs via `httpx.get()`, permitting an attacker to request internal network services or loopback interfaces (e.g., `http://127.0.0.1`, `http://169.254.169.254`).
+**Learning:** In applications where agents fetch remote data, user input must be sanitized before resolution. If DNS resolution occurs only during the HTTP request, there's a risk of Server-Side Request Forgery.
+**Prevention:** Intercept the HTTP request using a hook to resolve the hostname via `socket.getaddrinfo`, verify the IP against standard private, local, and unspecified ranges, and drop the request via `httpx.RequestError` if an unsafe IP is encountered. Use persistent `httpx.Client` with `event_hooks` for consistency.
