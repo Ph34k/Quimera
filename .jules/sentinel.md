@@ -1,0 +1,4 @@
+## 2025-05-16 - SSRF Protection with DNS Rebinding Mitigation
+**Vulnerability:** User-provided URLs were fetched directly using `httpx.get` without validation, exposing the system to Server-Side Request Forgery (SSRF) and DNS rebinding attacks on internal infrastructure.
+**Learning:** `httpx` follows redirects and resolves hostnames dynamically at request time. Relying on pre-request validation without intercepting the actual request cycle (TOCTOU) allows attackers to bypass checks via redirects or DNS rebinding. Implementing an `httpx` `event_hooks={'request': [verify_request]}` ensures the exact URL being requested (even after redirects) is validated by checking resolved IPs against private/loopback/link-local ranges.
+**Prevention:** Always use a request event hook in a persistent `httpx.Client` along with `socket.getaddrinfo` to validate the resolved IP before the actual network operation is dispatched.
