@@ -1,3 +1,42 @@
+import sys
+import unittest.mock as mock
+
+class MockHttpx:
+    class RequestError(Exception):
+        def __init__(self, message, request=None):
+            super().__init__(message)
+            self.request = request
+    class Client:
+        def __init__(self, *args, **kwargs):
+            self.event_hooks = kwargs.get('event_hooks', {})
+            self.follow_redirects = kwargs.get('follow_redirects', False)
+            self.timeout = kwargs.get('timeout', None)
+
+        def get(self, url, *args, **kwargs):
+            import collections
+            Request = collections.namedtuple('Request', ['url'])
+            req = Request(url=url)
+            for hook in self.event_hooks.get('request', []):
+                hook(req)
+            Response = collections.namedtuple('Response', ['status_code', 'text'])
+            return Response(status_code=200, text="Mocked")
+
+        def close(self):
+            pass
+
+    def get(self, url, *args, **kwargs):
+        import collections
+        Response = collections.namedtuple('Response', ['status_code', 'text'])
+        return Response(status_code=200, text="Mocked")
+
+mock_httpx = MockHttpx()
+mock_httpx.__name__ = 'httpx'
+sys.modules['httpx'] = mock_httpx
+
+mock_openai = mock.MagicMock()
+mock_openai.__name__ = 'openai'
+sys.modules['openai'] = mock_openai
+
 from fastapi.testclient import TestClient
 from app.main import app
 
