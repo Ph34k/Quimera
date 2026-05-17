@@ -10,11 +10,41 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import socket
+import ipaddress
+from urllib.parse import urlparse
+
+def is_safe_url(url: str) -> bool:
+    try:
+        host = urlparse(str(url)).hostname
+        if not host:
+            return False
+        for _, _, _, _, addr in socket.getaddrinfo(host, None):
+            ip = ipaddress.ip_address(addr[0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_unspecified:
+                return False
+        return True
+    except Exception:
+        return False
+
+def verify_request(request: httpx.Request):
+    if not is_safe_url(str(request.url)):
+        raise httpx.RequestError("Unsafe URL detected: SSRF prevented", request=request)
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
     Responsibility: OSINT, Web Scraping, Target Identification
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.client = httpx.Client(event_hooks={'request': [verify_request]}, timeout=5.0)
+
+    def __del__(self):
+        try:
+            self.client.close()
+        except Exception:
+            pass
+
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         target_url = payload.get("target_url")
         if not target_url:
@@ -22,7 +52,7 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            response = self.client.get(target_url)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -79,6 +109,20 @@ class IExecutionAgent(BaseAgent):
     """Agente de Execução (Execution)
     Responsibility: Real Stealth web driving (via HTTPx with advanced headers).
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.client = httpx.Client(
+            event_hooks={'request': [verify_request]},
+            timeout=5.0,
+            follow_redirects=True
+        )
+
+    def __del__(self):
+        try:
+            self.client.close()
+        except Exception:
+            pass
+
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         action = payload.get("action")
         target_url = payload.get("target_url")
@@ -87,7 +131,7 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            resp = self.client.get(target_url, headers=headers)
             return {
                 "status": "execution_successful",
                 "action": action,
