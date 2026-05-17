@@ -1,0 +1,3 @@
+## 2024-05-17 - Connection Pooling for Persistent Agent Connections
+**Learning:** Initializing isolated `httpx` request objects per-agent execution loop scales poorly.
+**Action:** Always extract HTTP client instantiations from the `execute` loop to an `__init__` constructor as `httpx.Client()` with a bounded lifecycle mapping explicitly closed by `__del__` block when scaling out multi-agent web environments.
