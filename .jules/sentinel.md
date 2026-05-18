@@ -1,0 +1,4 @@
+## 2024-05-18 - [CRITICAL] Prevent SSRF in Agent HTTP Requests
+**Vulnerability:** `IScoutAgent` and `IExecutionAgent` passed unsanitized, user-provided `target_url` payloads directly to `httpx.get()`, permitting trivial Server-Side Request Forgery (SSRF) and allowing external access to internal/private networked hosts (e.g., `localhost` or `127.0.0.1`) and potential DNS rebinding.
+**Learning:** Agentic logic that crawls user-defined URLs must operate via explicit, internal network safeguards.
+**Prevention:** We instantiated persistent `httpx.Client` pools with the `event_hooks={'request': [verify_request]}` parameter to actively resolve the `request.url.host` with `socket.getaddrinfo` and block private, loopback, and undefined IP spaces explicitly using `ipaddress`. Additionally, explicitly enforced an `is_safe_url` checking to filter out unsafe URL schemas (like `file://`).
