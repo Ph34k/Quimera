@@ -11,6 +11,27 @@ class BaseAgent(ABC):
 import httpx
 import uuid
 
+import socket
+import ipaddress
+
+def is_safe_url(url_or_ip: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(url_or_ip)
+        return not (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_unspecified)
+    except ValueError:
+        return False
+
+def verify_request(request: 'httpx.Request'):
+    hostname = request.url.host
+    try:
+        addrs = socket.getaddrinfo(hostname, None)
+        for addr in addrs:
+            ip_str = addr[4][0]
+            if not is_safe_url(ip_str):
+                raise httpx.RequestError(f"Blocked unsafe IP: {ip_str}", request=request)
+    except socket.gaierror:
+        raise httpx.RequestError("DNS resolution failed", request=request)
+
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
     Responsibility: OSINT, Web Scraping, Target Identification
@@ -22,7 +43,8 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            with httpx.Client(event_hooks={"request": [verify_request]}) as client:
+                response = client.get(target_url, timeout=5.0)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +109,8 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            with httpx.Client(event_hooks={"request": [verify_request]}) as client:
+                resp = client.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
             return {
                 "status": "execution_successful",
                 "action": action,
