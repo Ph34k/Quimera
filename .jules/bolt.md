@@ -1,0 +1,3 @@
+## 2024-05-26 - Persistent Connection Pooling in Singletons
+**Learning:** In HTTPx, performing repeated `httpx.get()` calls without a `Client` instantiates and tears down an internal connection pool on every request, which introduces significant TCP handshake and TLS negotiation overhead.
+**Action:** When working with singleton agent classes that perform repeated outbound HTTP requests (like `IScoutAgent` and `IExecutionAgent`), initialize an explicit `httpx.Client` instance in the class `__init__` method and reuse it for all `execute()` calls to dramatically improve network latency. Ensure a `__del__` method with a `try...except Exception: pass` block is included to prevent resource leaks during automated garbage collection checks.
