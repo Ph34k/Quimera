@@ -79,15 +79,25 @@ class IExecutionAgent(BaseAgent):
     """Agente de Execução (Execution)
     Responsibility: Real Stealth web driving (via HTTPx with advanced headers).
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+        self.client = httpx.Client(headers=headers, timeout=5.0, follow_redirects=True)
+
+    def __del__(self):
+        try:
+            self.client.close()
+        except Exception:
+            pass
+
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         action = payload.get("action")
         target_url = payload.get("target_url")
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
 
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            resp = self.client.get(target_url)
             return {
                 "status": "execution_successful",
                 "action": action,
