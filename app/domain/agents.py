@@ -1,5 +1,16 @@
+import time
+import uuid
+import httpx
 from abc import ABC, abstractmethod
 from typing import Dict, Any
+from openai import OpenAI
+from app.core.config import settings
+
+def _get_openai_client():
+    _openai_api_key = settings.OPENAI_API_KEY
+    if _openai_api_key == "sk-your-openai-api-key-here" or not _openai_api_key:
+        return None
+    return OpenAI(api_key=_openai_api_key)
 
 class BaseAgent(ABC):
     """Abstract Base Class for all Quimera Agents."""
@@ -7,9 +18,6 @@ class BaseAgent(ABC):
     @abstractmethod
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         pass
-
-import httpx
-import uuid
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -38,17 +46,6 @@ class IScoutAgent(BaseAgent):
                 "error": str(e)
             }
 
-import time
-from openai import OpenAI
-from app.core.config import settings
-
-# Initialize real OpenAI client
-_openai_api_key = settings.OPENAI_API_KEY
-if _openai_api_key == "sk-your-openai-api-key-here" or not _openai_api_key:
-    client = None
-else:
-    client = OpenAI(api_key=_openai_api_key)
-
 class IAnalystAgent(BaseAgent):
     """Agente Analista (Analyst)
     Responsibility: Semantic Processing, Profile Analysis.
@@ -59,6 +56,7 @@ class IAnalystAgent(BaseAgent):
         if not text:
             raise ValueError("text is required for AnalystAgent")
 
+        client = _get_openai_client()
         if not client:
             raise ValueError("OPENAI_API_KEY is not set or is mock default. Cannot run actual Analyst logic.")
 
@@ -105,6 +103,7 @@ class IPersuasionAgent(BaseAgent):
         trigger = payload.get("trigger", "reciprocity")
         context = payload.get("context", "networking")
 
+        client = _get_openai_client()
         if not client:
             raise ValueError("OPENAI_API_KEY is not set or is mock default. Cannot run actual Persuasion logic.")
 
@@ -133,6 +132,7 @@ class IScribeAgent(BaseAgent):
         if not draft:
             raise ValueError("draft_text required for ScribeAgent")
 
+        client = _get_openai_client()
         if not client:
             raise ValueError("OPENAI_API_KEY is not set or is mock default. Cannot run actual Scribe logic.")
 
