@@ -1,0 +1,1 @@
+2024-05-24, Disabled Elasticsearch Security, Exposed Elasticsearch instances without authentication allow unauthorized access. Enabling xpack.security and configuring credentials mitigates this., Always enable authentication (xpack.security.enabled=true) and define credentials (e.g., ELASTIC_PASSWORD) in Docker deployments.
