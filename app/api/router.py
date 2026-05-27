@@ -59,10 +59,10 @@ def run_analyst(request: GenericRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.post("/execution/run", response_model=GenericResponse)
-def run_execution(request: GenericRequest):
+async def run_execution(request: GenericRequest):
     """Executes the Execution Agent."""
     try:
-        result = execution_agent.execute(request.payload)
+        result = await execution_agent.execute(request.payload)
         return GenericResponse(result=result)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
