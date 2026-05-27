@@ -1,0 +1,4 @@
+## 2025-05-27 - Disabled Elasticsearch Security
+**Vulnerability:** Elasticsearch instance in local setup allowed unauthenticated access over HTTP due to disabled xpack security.
+**Learning:** In Elasticsearch 8.x, enabling `xpack.security.enabled` defaults to requiring HTTPS. To use basic auth locally without configuring certificates, `xpack.security.http.ssl.enabled=false` must be set. Additionally, dependent services connecting to ES via HTTP must include auth credentials in their connection URLs (e.g., `http://user:pass@host:9200`).
+**Prevention:** Avoid modifying production-critical security defaults (e.g., disabling xpack security entirely) purely for local convenience; configure local environments securely by using provided auth defaults and explicitly handling required settings (like disabling SSL requirement explicitly over loopback if avoiding certificate management).
