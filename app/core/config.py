@@ -20,6 +20,6 @@ class Settings:
 
     # Cache / Search
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-    ELASTICSEARCH_URL: str = os.getenv("ELASTICSEARCH_URL", "http://localhost:9200")
+    ELASTICSEARCH_URL: str = os.getenv("ELASTICSEARCH_URL", "http://elastic:quimera_elastic_password@localhost:9200")
 
 settings = Settings()
