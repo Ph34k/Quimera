@@ -9,8 +9,13 @@ class Settings:
 
     # API / Security
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "default_secret_key_for_dev")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+
+    _env_secret = os.getenv("SECRET_KEY")
+    if ENVIRONMENT == "production" and not _env_secret:
+        raise ValueError("SECRET_KEY environment variable must be set in production")
+
+    SECRET_KEY: str = _env_secret or "default_secret_key_for_dev"
 
     # Database
     POSTGRES_URL: str = os.getenv(
