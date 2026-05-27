@@ -20,7 +20,8 @@ def test_scout_mission_dispatch():
         "target_url": "https://httpbin.org/get",
         "depth": 2
     }
-    response = client.post("/api/v1/scout/mission", json=payload)
+    headers = {"Authorization": "Bearer default_secret_key_for_dev"}
+    response = client.post("/api/v1/scout/mission", json=payload, headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "success"
@@ -28,6 +29,14 @@ def test_scout_mission_dispatch():
     assert "mission_id" in data
     assert data["http_status"] == 200
     assert data["content_length"] > 0
+
+def test_scout_mission_dispatch_unauthorized():
+    payload = {
+        "target_url": "https://httpbin.org/get",
+        "depth": 2
+    }
+    response = client.post("/api/v1/scout/mission", json=payload)
+    assert response.status_code == 401
 
 def test_analyst_agent():
     payload = {"payload": {"text": "hello world from analyst test the test"}}
