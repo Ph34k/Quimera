@@ -7,6 +7,10 @@ from app.domain.agents import (
     IPersuasionAgent, IScribeAgent, ILearningAgent
 )
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 api_router = APIRouter()
 scout_agent = IScoutAgent()
 analyst_agent = IAnalystAgent()
@@ -47,6 +51,7 @@ def dispatch_scout_mission(request: ScoutMissionRequest):
         result = scout_agent.execute({"target_url": request.target_url})
         return ScoutMissionResponse(**result)
     except Exception as e:
+        logger.exception("Error executing scout mission")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/analyst/process", response_model=GenericResponse)
@@ -56,6 +61,7 @@ def run_analyst(request: GenericRequest):
         result = analyst_agent.execute(request.payload)
         return GenericResponse(result=result)
     except Exception as e:
+        logger.exception("Error executing analyst agent")
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.post("/execution/run", response_model=GenericResponse)
@@ -65,6 +71,7 @@ def run_execution(request: GenericRequest):
         result = execution_agent.execute(request.payload)
         return GenericResponse(result=result)
     except Exception as e:
+        logger.exception("Error executing execution agent")
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.post("/persuasion/generate", response_model=GenericResponse)
@@ -74,6 +81,7 @@ def run_persuasion(request: GenericRequest):
         result = persuasion_agent.execute(request.payload)
         return GenericResponse(result=result)
     except Exception as e:
+        logger.exception("Error executing persuasion agent")
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.post("/scribe/rewrite", response_model=GenericResponse)
@@ -83,6 +91,7 @@ def run_scribe(request: GenericRequest):
         result = scribe_agent.execute(request.payload)
         return GenericResponse(result=result)
     except Exception as e:
+        logger.exception("Error executing scribe agent")
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.post("/learning/check", response_model=GenericResponse)
@@ -92,4 +101,5 @@ def run_learning(request: GenericRequest):
         result = learning_agent.execute(request.payload)
         return GenericResponse(result=result)
     except Exception as e:
+        logger.exception("Error executing learning agent")
         raise HTTPException(status_code=400, detail=str(e))
