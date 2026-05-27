@@ -13,10 +13,7 @@ class Settings:
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
 
     # Database
-    POSTGRES_URL: str = os.getenv(
-        "POSTGRES_URL",
-        "postgresql://quimera_user:quimera_password@localhost:5432/quimera_db"
-    )
+    POSTGRES_URL: str = os.environ["POSTGRES_URL"]
 
     # Cache / Search
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
