@@ -1,0 +1,2441 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Projeto Quimera",
+    "description": "Backend Ecosystem for Offensive/Defensive Auditing and Social Engagement Automation",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Health Check",
+        "description": "Health check endpoint to verify the API is running.",
+        "operationId": "health_check_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scout/mission": {
+      "post": {
+        "tags": [
+          "\ud83e\udd85 Agente Batedor (Scout)"
+        ],
+        "summary": "Dispatch Scout Mission",
+        "description": "Despacha o Agente Batedor (Scout) para analisar as respostas HTTP de uma URL alvo.",
+        "operationId": "dispatch_scout_mission_api_v1_scout_mission_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScoutMissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoutMissionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scout/scrape-dumps": {
+      "post": {
+        "tags": [
+          "\ud83e\udd85 Agente Batedor (Scout)"
+        ],
+        "summary": "Scrape Dumps",
+        "description": "Faz o bypass de WAFs b\u00e1sicos e raspa quest\u00f5es de certifica\u00e7\u00e3o em portais de Dumps (ex: ExamTopics).",
+        "operationId": "scrape_dumps_api_v1_scout_scrape_dumps_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScrapeDumpsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScrapeDumpsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scout/extract-arm-credentials": {
+      "post": {
+        "tags": [
+          "\ud83e\udd85 Agente Batedor (Scout)"
+        ],
+        "summary": "Extract Arm Credentials",
+        "description": "[Red Team] Escaneia silenciosamente o DOM de laborat\u00f3rios em nuvem para extrair chaves ef\u00eameras.",
+        "operationId": "extract_arm_credentials_api_v1_scout_extract_arm_credentials_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtractARMCredentialsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractARMCredentialsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scout/missions": {
+      "get": {
+        "tags": [
+          "\ud83e\udd85 Agente Batedor (Scout)"
+        ],
+        "summary": "List Missions",
+        "description": "Retorna o hist\u00f3rico de todas as miss\u00f5es de reconhecimento salvas.",
+        "operationId": "list_missions_api_v1_scout_missions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionHistoryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/solve-notebook": {
+      "post": {
+        "tags": [
+          "\ud83e\udde0 Agente Analista (Analyst)"
+        ],
+        "summary": "Solve Notebook",
+        "description": "Identifica exerc\u00edcios em um Jupyter Notebook e injeta respostas geradas por IA (Ollama/OpenAI).",
+        "operationId": "solve_notebook_api_v1_analyst_solve_notebook_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolveNotebookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolveNotebookResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/generate-terraform": {
+      "post": {
+        "tags": [
+          "\ud83e\udde0 Agente Analista (Analyst)"
+        ],
+        "summary": "Generate Terraform",
+        "description": "L\u00ea instru\u00e7\u00f5es em linguagem natural (NLP) e compila templates de Terraform.",
+        "operationId": "generate_terraform_api_v1_analyst_generate_terraform_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateIaCRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateIaCResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/generate-bicep": {
+      "post": {
+        "tags": [
+          "\ud83e\udde0 Agente Analista (Analyst)"
+        ],
+        "summary": "Generate Bicep",
+        "description": "L\u00ea instru\u00e7\u00f5es em linguagem natural (NLP) e compila templates Bicep/ARM.",
+        "operationId": "generate_bicep_api_v1_analyst_generate_bicep_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateIaCRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateIaCResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/cross-check": {
+      "post": {
+        "tags": [
+          "\ud83e\udde0 Agente Analista (Analyst)"
+        ],
+        "summary": "Cross Check",
+        "description": "Busca a verdade absoluta nas documenta\u00e7\u00f5es oficiais para corrigir gabaritos votados erroneamente.",
+        "operationId": "cross_check_api_v1_analyst_cross_check_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrossCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrossCheckResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/correct-drift": {
+      "post": {
+        "tags": [
+          "\ud83e\udde0 Agente Analista (Analyst)"
+        ],
+        "summary": "Correct Drift",
+        "description": "Corrige o Community Drift (mesmo backend de cross-check).",
+        "operationId": "correct_drift_api_v1_analyst_correct_drift_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrossCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrossCheckResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/compile-dumps": {
+      "post": {
+        "tags": [
+          "\ud83e\udde0 Agente Analista (Analyst)"
+        ],
+        "summary": "Compile Dumps",
+        "description": "Estrutura quest\u00f5es raspadas em JSON e aplica Criptografia AES-128-CBC (Fernet).",
+        "operationId": "compile_dumps_api_v1_analyst_compile_dumps_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompileDumpsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompileDumpsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/export-anki": {
+      "post": {
+        "tags": [
+          "\ud83e\udde0 Agente Analista (Analyst)"
+        ],
+        "summary": "Export Anki",
+        "description": "Exporta os dados processados para formatos de memoriza\u00e7\u00e3o (.apkg).",
+        "operationId": "export_anki_api_v1_analyst_export_anki_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportAnkiRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportAnkiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/index-search": {
+      "post": {
+        "tags": [
+          "\ud83e\udde0 Agente Analista (Analyst)"
+        ],
+        "summary": "Index Search",
+        "description": "Injeta em um \u00edndice do ElasticSearch para buscas.",
+        "operationId": "index_search_api_v1_analyst_index_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportAnkiRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Index Search Api V1 Analyst Index Search Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/unlock-evaluation": {
+      "post": {
+        "tags": [
+          "\ud83e\udde0 Agente Analista (Analyst)"
+        ],
+        "summary": "Unlock Evaluation",
+        "description": "[Blue Team] Rota defensiva que executa auditoria heur\u00edstica no hist\u00f3rico do aluno.",
+        "operationId": "unlock_evaluation_api_v1_analyst_unlock_evaluation_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnlockEvaluationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnlockEvaluationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/issue-credential": {
+      "post": {
+        "tags": [
+          "\ud83e\udde0 Agente Analista (Analyst)"
+        ],
+        "summary": "Issue Credential",
+        "description": "[Blue Team] Emite Vouchers/Badges com Watermarking Criptogr\u00e1fico.",
+        "operationId": "issue_credential_api_v1_analyst_issue_credential_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueCredentialRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueCredentialResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execution/lti-launch": {
+      "post": {
+        "tags": [
+          "\u26a1 Agente de Execu\u00e7\u00e3o (Execution)"
+        ],
+        "summary": "Lti Launch",
+        "description": "[Blue Team] Valida matematicamente assinaturas JWT, Nonces e certificados DPoP para impedir roubo de sess\u00e3o LTI 1.3.",
+        "operationId": "lti_launch_api_v1_execution_lti_launch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LTILaunchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericValidationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execution/verify-identity": {
+      "post": {
+        "tags": [
+          "\u26a1 Agente de Execu\u00e7\u00e3o (Execution)"
+        ],
+        "summary": "Verify Identity",
+        "description": "[Blue Team] Exige prova de vivacidade (Liveness) biom\u00e9trica 3D.",
+        "operationId": "verify_identity_api_v1_execution_verify_identity_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyIdentityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericValidationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execution/enroll-premium": {
+      "post": {
+        "tags": [
+          "\u26a1 Agente de Execu\u00e7\u00e3o (Execution)"
+        ],
+        "summary": "Enroll Premium",
+        "description": "[Blue Team] Previne Parameter Tampering, confirmando transa\u00e7\u00e3o no Stripe.",
+        "operationId": "enroll_premium_api_v1_execution_enroll_premium_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrollPremiumRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericValidationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execution/redeem-voucher": {
+      "post": {
+        "tags": [
+          "\u26a1 Agente de Execu\u00e7\u00e3o (Execution)"
+        ],
+        "summary": "Redeem Voucher",
+        "description": "Protege campanhas promocionais usando Geofencing e valida\u00e7\u00f5es hCaptcha.",
+        "operationId": "redeem_voucher_api_v1_execution_redeem_voucher_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedeemVoucherRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericValidationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execution/deploy-iac": {
+      "post": {
+        "tags": [
+          "\u26a1 Agente de Execu\u00e7\u00e3o (Execution)"
+        ],
+        "summary": "Deploy Iac",
+        "description": "[Red Team] Aciona bin\u00e1rios locais (Terraform) para subir infraestruturas na nuvem.",
+        "operationId": "deploy_iac_api_v1_execution_deploy_iac_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeployIaCRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeployIaCResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execution/deploy-bicep": {
+      "post": {
+        "tags": [
+          "\u26a1 Agente de Execu\u00e7\u00e3o (Execution)"
+        ],
+        "summary": "Deploy Bicep",
+        "description": "[Red Team] Aciona bin\u00e1rios locais (Azure CLI) para subir infraestruturas na nuvem.",
+        "operationId": "deploy_bicep_api_v1_execution_deploy_bicep_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeployIaCRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeployIaCResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execution/hit-and-run-validation": {
+      "post": {
+        "tags": [
+          "\u26a1 Agente de Execu\u00e7\u00e3o (Execution)"
+        ],
+        "summary": "Hit And Run Validation",
+        "description": "[Red Team] Pede a valida\u00e7\u00e3o na API e aciona imediatamente o terraform destroy.",
+        "operationId": "hit_and_run_validation_api_v1_execution_hit_and_run_validation_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HitAndRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericValidationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execution/verify-lab-progress": {
+      "post": {
+        "tags": [
+          "\u26a1 Agente de Execu\u00e7\u00e3o (Execution)"
+        ],
+        "summary": "Verify Lab Progress",
+        "description": "[Blue Team] Defesa contra o \"Hit and Run\", exige Sustained Uptime.",
+        "operationId": "verify_lab_progress_api_v1_execution_verify_lab_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyLabProgressRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericValidationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execution/bypass-mfa": {
+      "post": {
+        "tags": [
+          "\u26a1 Agente de Execu\u00e7\u00e3o (Execution)"
+        ],
+        "summary": "Bypass Mfa",
+        "description": "[Red Team] Usa Microsoft Graph API para desativar pol\u00edticas de Conditional Access.",
+        "operationId": "bypass_mfa_api_v1_execution_bypass_mfa_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BypassMFARequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericValidationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execution/inject-quiz": {
+      "post": {
+        "tags": [
+          "\u26a1 Agente de Execu\u00e7\u00e3o (Execution)"
+        ],
+        "summary": "Inject Quiz",
+        "description": "[Red Team] Submete respostas aplicando margem de erro intencional.",
+        "operationId": "inject_quiz_api_v1_execution_inject_quiz_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InjectQuizRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericValidationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execution/submit-autograder-loop": {
+      "post": {
+        "tags": [
+          "\u26a1 Agente de Execu\u00e7\u00e3o (Execution)"
+        ],
+        "summary": "Submit Autograder Loop",
+        "description": "Submete c\u00f3digo e usa IA para corrigir falhas lendo o Stack Trace (Self-Healing).",
+        "operationId": "submit_autograder_loop_api_v1_execution_submit_autograder_loop_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAutograderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitAutograderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/persuasion/financial-aid-essay": {
+      "post": {
+        "tags": [
+          "\ud83c\udfad Motor de Persuas\u00e3o (Persuasion)"
+        ],
+        "summary": "Financial Aid Essay",
+        "description": "Gera reda\u00e7\u00f5es para bolsas de estudo usando gatilho matem\u00e1tico de PPP.",
+        "operationId": "financial_aid_essay_api_v1_persuasion_financial_aid_essay_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinancialAidRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EssayResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/persuasion/impact-essay": {
+      "post": {
+        "tags": [
+          "\ud83c\udfad Motor de Persuas\u00e3o (Persuasion)"
+        ],
+        "summary": "Impact Essay",
+        "description": "Cruza ementa com projetos para justificar impacto social e empregabilidade.",
+        "operationId": "impact_essay_api_v1_persuasion_impact_essay_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImpactEssayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EssayResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/persuasion/start-business-trial": {
+      "post": {
+        "tags": [
+          "\ud83c\udfad Motor de Persuas\u00e3o (Persuasion)"
+        ],
+        "summary": "Start Business Trial",
+        "description": "[Blue Team] Valida o BIN Level para bloquear Cart\u00f5es Virtuais (VCCs).",
+        "operationId": "start_business_trial_api_v1_persuasion_start_business_trial_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessTrialRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessTrialResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scribe/draft": {
+      "post": {
+        "tags": [
+          "\ud83e\udeb6 Agente Escriba (Scribe)"
+        ],
+        "summary": "Draft Document",
+        "description": "Monta a estrutura inicial de peti\u00e7\u00f5es ou documentos formais.",
+        "operationId": "draft_document_api_v1_scribe_draft_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScribeTextResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scribe/forum-reply": {
+      "post": {
+        "tags": [
+          "\ud83e\udeb6 Agente Escriba (Scribe)"
+        ],
+        "summary": "Forum Reply",
+        "description": "Gera respostas t\u00e9cnicas em ingl\u00eas perfeito para f\u00f3runs.",
+        "operationId": "forum_reply_api_v1_scribe_forum_reply_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForumReplyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScribeTextResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scribe/forum-upvote": {
+      "post": {
+        "tags": [
+          "\ud83e\udeb6 Agente Escriba (Scribe)"
+        ],
+        "summary": "Forum Upvote",
+        "description": "[Blue Team] Contabiliza upvotes protegidos pelo SybilDetector.",
+        "operationId": "forum_upvote_api_v1_scribe_forum_upvote_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForumUpvoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForumUpvoteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/learning/unlock-module": {
+      "post": {
+        "tags": [
+          "\u23f1\ufe0f Agente de Aprendizagem (Learning)"
+        ],
+        "summary": "Unlock Module",
+        "description": "[Blue Team] Executa Time-Lock Validation no Backend, bloqueando Client-Time Bypass.",
+        "operationId": "unlock_module_api_v1_learning_unlock_module_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnlockModuleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnlockModuleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/learning/fetch-quiz": {
+      "get": {
+        "tags": [
+          "\u23f1\ufe0f Agente de Aprendizagem (Learning)"
+        ],
+        "summary": "Fetch Quiz",
+        "description": "[Blue Team] Previne JSON Scraping entregando payload criptografado com IDs polim\u00f3rficos.",
+        "operationId": "fetch_quiz_api_v1_learning_fetch_quiz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetchQuizResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Read Root",
+        "operationId": "read_root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BusinessTrialRequest": {
+        "properties": {
+          "credit_card_bin": {
+            "type": "string",
+            "title": "Credit Card Bin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "credit_card_bin"
+        ],
+        "title": "BusinessTrialRequest"
+      },
+      "BusinessTrialResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "is_allowed": {
+            "type": "boolean",
+            "title": "Is Allowed"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "is_allowed"
+        ],
+        "title": "BusinessTrialResponse"
+      },
+      "BypassMFARequest": {
+        "properties": {
+          "stolen_token": {
+            "type": "string",
+            "title": "Stolen Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stolen_token"
+        ],
+        "title": "BypassMFARequest"
+      },
+      "CompileDumpsRequest": {
+        "properties": {
+          "raw_questions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Raw Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "raw_questions"
+        ],
+        "title": "CompileDumpsRequest"
+      },
+      "CompileDumpsResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "encrypted_payload": {
+            "type": "string",
+            "title": "Encrypted Payload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "encrypted_payload"
+        ],
+        "title": "CompileDumpsResponse"
+      },
+      "CrossCheckRequest": {
+        "properties": {
+          "question_text": {
+            "type": "string",
+            "title": "Question Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_text"
+        ],
+        "title": "CrossCheckRequest"
+      },
+      "CrossCheckResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "corrected_answer": {
+            "type": "string",
+            "title": "Corrected Answer"
+          },
+          "truth_source": {
+            "type": "string",
+            "title": "Truth Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "corrected_answer",
+          "truth_source"
+        ],
+        "title": "CrossCheckResponse"
+      },
+      "DeployIaCRequest": {
+        "properties": {
+          "iac_template": {
+            "type": "string",
+            "title": "Iac Template"
+          },
+          "cloud_provider": {
+            "type": "string",
+            "title": "Cloud Provider"
+          }
+        },
+        "type": "object",
+        "required": [
+          "iac_template",
+          "cloud_provider"
+        ],
+        "title": "DeployIaCRequest"
+      },
+      "DeployIaCResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "deployment_id": {
+            "type": "string",
+            "title": "Deployment Id"
+          },
+          "logs": {
+            "type": "string",
+            "title": "Logs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "deployment_id",
+          "logs"
+        ],
+        "title": "DeployIaCResponse"
+      },
+      "DraftRequest": {
+        "properties": {
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "context": {
+            "type": "string",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic",
+          "context"
+        ],
+        "title": "DraftRequest"
+      },
+      "EnrollPremiumRequest": {
+        "properties": {
+          "transaction_id": {
+            "type": "string",
+            "title": "Transaction Id"
+          },
+          "course_id": {
+            "type": "string",
+            "title": "Course Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "transaction_id",
+          "course_id"
+        ],
+        "title": "EnrollPremiumRequest"
+      },
+      "EssayResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "generated_essay": {
+            "type": "string",
+            "title": "Generated Essay"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "generated_essay"
+        ],
+        "title": "EssayResponse"
+      },
+      "ExportAnkiRequest": {
+        "properties": {
+          "encrypted_payload": {
+            "type": "string",
+            "title": "Encrypted Payload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "encrypted_payload"
+        ],
+        "title": "ExportAnkiRequest"
+      },
+      "ExportAnkiResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "download_url": {
+            "type": "string",
+            "title": "Download Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "download_url"
+        ],
+        "title": "ExportAnkiResponse"
+      },
+      "ExtractARMCredentialsRequest": {
+        "properties": {
+          "lab_url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Lab Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lab_url"
+        ],
+        "title": "ExtractARMCredentialsRequest"
+      },
+      "ExtractARMCredentialsResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "tenant_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenant Id"
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ExtractARMCredentialsResponse"
+      },
+      "FetchQuizResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "encrypted_quiz_payload": {
+            "type": "string",
+            "title": "Encrypted Quiz Payload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "encrypted_quiz_payload"
+        ],
+        "title": "FetchQuizResponse"
+      },
+      "FinancialAidRequest": {
+        "properties": {
+          "user_location": {
+            "type": "string",
+            "title": "User Location"
+          },
+          "target_course": {
+            "type": "string",
+            "title": "Target Course"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_location",
+          "target_course"
+        ],
+        "title": "FinancialAidRequest"
+      },
+      "ForumReplyRequest": {
+        "properties": {
+          "forum_question": {
+            "type": "string",
+            "title": "Forum Question"
+          }
+        },
+        "type": "object",
+        "required": [
+          "forum_question"
+        ],
+        "title": "ForumReplyRequest"
+      },
+      "ForumUpvoteRequest": {
+        "properties": {
+          "post_id": {
+            "type": "string",
+            "title": "Post Id"
+          },
+          "user_ip": {
+            "type": "string",
+            "title": "User Ip"
+          }
+        },
+        "type": "object",
+        "required": [
+          "post_id",
+          "user_ip"
+        ],
+        "title": "ForumUpvoteRequest"
+      },
+      "ForumUpvoteResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "upvote_counted": {
+            "type": "boolean",
+            "title": "Upvote Counted"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "upvote_counted"
+        ],
+        "title": "ForumUpvoteResponse"
+      },
+      "GenerateIaCRequest": {
+        "properties": {
+          "natural_language_instruction": {
+            "type": "string",
+            "title": "Natural Language Instruction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "natural_language_instruction"
+        ],
+        "title": "GenerateIaCRequest"
+      },
+      "GenerateIaCResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "iac_template": {
+            "type": "string",
+            "title": "Iac Template"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "iac_template"
+        ],
+        "title": "GenerateIaCResponse"
+      },
+      "GenericValidationResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "is_valid": {
+            "type": "boolean",
+            "title": "Is Valid"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "is_valid"
+        ],
+        "title": "GenericValidationResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HitAndRunRequest": {
+        "properties": {
+          "lab_validation_url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Lab Validation Url"
+          },
+          "iac_template": {
+            "type": "string",
+            "title": "Iac Template"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lab_validation_url",
+          "iac_template"
+        ],
+        "title": "HitAndRunRequest"
+      },
+      "ImpactEssayRequest": {
+        "properties": {
+          "course_syllabus": {
+            "type": "string",
+            "title": "Course Syllabus"
+          },
+          "user_projects": {
+            "type": "string",
+            "title": "User Projects"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_syllabus",
+          "user_projects"
+        ],
+        "title": "ImpactEssayRequest"
+      },
+      "InjectQuizRequest": {
+        "properties": {
+          "quiz_id": {
+            "type": "string",
+            "title": "Quiz Id"
+          },
+          "answers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Answers"
+          },
+          "target_score_percentage": {
+            "type": "integer",
+            "title": "Target Score Percentage",
+            "default": 90
+          }
+        },
+        "type": "object",
+        "required": [
+          "quiz_id",
+          "answers"
+        ],
+        "title": "InjectQuizRequest"
+      },
+      "IssueCredentialRequest": {
+        "properties": {
+          "student_id": {
+            "type": "string",
+            "title": "Student Id"
+          },
+          "exam_id": {
+            "type": "string",
+            "title": "Exam Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "student_id",
+          "exam_id"
+        ],
+        "title": "IssueCredentialRequest"
+      },
+      "IssueCredentialResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "credential_id": {
+            "type": "string",
+            "title": "Credential Id"
+          },
+          "watermark_signature": {
+            "type": "string",
+            "title": "Watermark Signature"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "credential_id",
+          "watermark_signature"
+        ],
+        "title": "IssueCredentialResponse"
+      },
+      "LTILaunchRequest": {
+        "properties": {
+          "jwt_token": {
+            "type": "string",
+            "title": "Jwt Token"
+          },
+          "nonce": {
+            "type": "string",
+            "title": "Nonce"
+          },
+          "dpop_cert": {
+            "type": "string",
+            "title": "Dpop Cert"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jwt_token",
+          "nonce",
+          "dpop_cert"
+        ],
+        "title": "LTILaunchRequest"
+      },
+      "MissionHistoryResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "missions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Missions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "missions"
+        ],
+        "title": "MissionHistoryResponse"
+      },
+      "RedeemVoucherRequest": {
+        "properties": {
+          "voucher_code": {
+            "type": "string",
+            "title": "Voucher Code"
+          },
+          "captcha_token": {
+            "type": "string",
+            "title": "Captcha Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "voucher_code",
+          "captcha_token"
+        ],
+        "title": "RedeemVoucherRequest"
+      },
+      "ScoutMissionRequest": {
+        "properties": {
+          "target_url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Target Url"
+          },
+          "depth": {
+            "type": "integer",
+            "title": "Depth",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "required": [
+          "target_url"
+        ],
+        "title": "ScoutMissionRequest"
+      },
+      "ScoutMissionResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "mission_id": {
+            "type": "string",
+            "title": "Mission Id"
+          },
+          "target": {
+            "type": "string",
+            "title": "Target"
+          },
+          "http_status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Http Status"
+          },
+          "content_length": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Length"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "mission_id",
+          "target"
+        ],
+        "title": "ScoutMissionResponse"
+      },
+      "ScrapeDumpsRequest": {
+        "properties": {
+          "dump_url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Dump Url"
+          },
+          "max_questions": {
+            "type": "integer",
+            "title": "Max Questions",
+            "default": 50
+          }
+        },
+        "type": "object",
+        "required": [
+          "dump_url"
+        ],
+        "title": "ScrapeDumpsRequest"
+      },
+      "ScrapeDumpsResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "questions_scraped": {
+            "type": "integer",
+            "title": "Questions Scraped"
+          },
+          "data": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "questions_scraped",
+          "data"
+        ],
+        "title": "ScrapeDumpsResponse"
+      },
+      "ScribeTextResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "content"
+        ],
+        "title": "ScribeTextResponse"
+      },
+      "SolveNotebookRequest": {
+        "properties": {
+          "notebook_content": {
+            "type": "string",
+            "title": "Notebook Content"
+          },
+          "target_platform": {
+            "type": "string",
+            "title": "Target Platform"
+          }
+        },
+        "type": "object",
+        "required": [
+          "notebook_content",
+          "target_platform"
+        ],
+        "title": "SolveNotebookRequest"
+      },
+      "SolveNotebookResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "solved_notebook": {
+            "type": "string",
+            "title": "Solved Notebook"
+          },
+          "ast_validation_passed": {
+            "type": "boolean",
+            "title": "Ast Validation Passed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "solved_notebook",
+          "ast_validation_passed"
+        ],
+        "title": "SolveNotebookResponse"
+      },
+      "SubmitAutograderRequest": {
+        "properties": {
+          "code_content": {
+            "type": "string",
+            "title": "Code Content"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code_content",
+          "language"
+        ],
+        "title": "SubmitAutograderRequest"
+      },
+      "SubmitAutograderResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "final_score": {
+            "type": "integer",
+            "title": "Final Score"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "final_score",
+          "attempts"
+        ],
+        "title": "SubmitAutograderResponse"
+      },
+      "UnlockEvaluationRequest": {
+        "properties": {
+          "student_id": {
+            "type": "string",
+            "title": "Student Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "student_id"
+        ],
+        "title": "UnlockEvaluationRequest"
+      },
+      "UnlockEvaluationResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "evaluation_unlocked": {
+            "type": "boolean",
+            "title": "Evaluation Unlocked"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "evaluation_unlocked"
+        ],
+        "title": "UnlockEvaluationResponse"
+      },
+      "UnlockModuleRequest": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "module_id": {
+            "type": "string",
+            "title": "Module Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "module_id"
+        ],
+        "title": "UnlockModuleRequest"
+      },
+      "UnlockModuleResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "unlocked": {
+            "type": "boolean",
+            "title": "Unlocked"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "unlocked"
+        ],
+        "title": "UnlockModuleResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VerifyIdentityRequest": {
+        "properties": {
+          "biometric_data": {
+            "type": "string",
+            "title": "Biometric Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "biometric_data"
+        ],
+        "title": "VerifyIdentityRequest"
+      },
+      "VerifyLabProgressRequest": {
+        "properties": {
+          "lab_id": {
+            "type": "string",
+            "title": "Lab Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lab_id"
+        ],
+        "title": "VerifyLabProgressRequest"
+      }
+    }
+  }
+}
