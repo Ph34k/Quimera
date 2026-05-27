@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+from unittest.mock import patch
 from app.main import app
 
 client = TestClient(app)
@@ -28,6 +29,17 @@ def test_scout_mission_dispatch():
     assert "mission_id" in data
     assert data["http_status"] == 200
     assert data["content_length"] > 0
+
+@patch("app.api.router.scout_agent.execute")
+def test_scout_mission_dispatch_error(mock_execute):
+    mock_execute.side_effect = Exception("Simulated error")
+    payload = {
+        "target_url": "https://httpbin.org/get",
+        "depth": 2
+    }
+    response = client.post("/api/v1/scout/mission", json=payload)
+    assert response.status_code == 500
+    assert response.json()["detail"] == "Simulated error"
 
 def test_analyst_agent():
     payload = {"payload": {"text": "hello world from analyst test the test"}}
