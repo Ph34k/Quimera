@@ -5,30 +5,67 @@ class BaseAgent(ABC):
     """Abstract Base Class for all Quimera Agents."""
 
     @abstractmethod
-    def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         pass
 
-import httpx
 import uuid
+import httpx
+from playwright.async_api import async_playwright
+
+import asyncio
+
+# Global playwright and browser instances
+_playwright = None
+_browser = None
+_browser_lock = asyncio.Lock()
+
+async def _get_browser():
+    global _playwright, _browser
+    if _playwright is None:
+        async with _browser_lock:
+            # Check again inside the lock to avoid race conditions
+            if _playwright is None:
+                _playwright = await async_playwright().start()
+                _browser = await _playwright.chromium.launch(
+                    headless=True,
+                    args=['--disable-blink-features=AutomationControlled']
+                )
+    return _browser
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
     Responsibility: OSINT, Web Scraping, Target Identification
+    Uses Playwright for stealth and advanced scraping.
     """
-    def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         target_url = payload.get("target_url")
         if not target_url:
             raise ValueError("target_url is required for ScoutAgent")
 
+        context = None
         try:
-            # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            browser = await _get_browser()
+            context = await browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                viewport={"width": 1920, "height": 1080}
+            )
+
+            page = await context.new_page()
+            # Use a reasonable timeout
+            response = await page.goto(target_url, timeout=15000, wait_until="domcontentloaded")
+
+            if not response:
+                raise Exception("No response received from target URL.")
+
+            content = await page.content()
+            status_code = response.status
+
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
                 "target": target_url,
-                "http_status": response.status_code,
-                "content_length": len(response.text)
+                "http_status": status_code,
+                "content_length": len(content)
             }
         except Exception as e:
             return {
@@ -37,9 +74,13 @@ class IScoutAgent(BaseAgent):
                 "target": target_url,
                 "error": str(e)
             }
+        finally:
+            if context:
+                await context.close()
 
 import time
-from openai import OpenAI
+import asyncio
+from openai import AsyncOpenAI
 from app.core.config import settings
 
 # Initialize real OpenAI client
@@ -47,14 +88,14 @@ _openai_api_key = settings.OPENAI_API_KEY
 if _openai_api_key == "sk-your-openai-api-key-here" or not _openai_api_key:
     client = None
 else:
-    client = OpenAI(api_key=_openai_api_key)
+    client = AsyncOpenAI(api_key=_openai_api_key)
 
 class IAnalystAgent(BaseAgent):
     """Agente Analista (Analyst)
     Responsibility: Semantic Processing, Profile Analysis.
     Implemented via real OpenAI API logic.
     """
-    def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         text = payload.get("text", "")
         if not text:
             raise ValueError("text is required for AnalystAgent")
@@ -62,7 +103,7 @@ class IAnalystAgent(BaseAgent):
         if not client:
             raise ValueError("OPENAI_API_KEY is not set or is mock default. Cannot run actual Analyst logic.")
 
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a senior analyst. Analyze the following text and extract keywords and sentiment."},
@@ -79,7 +120,7 @@ class IExecutionAgent(BaseAgent):
     """Agente de Execução (Execution)
     Responsibility: Real Stealth web driving (via HTTPx with advanced headers).
     """
-    def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         action = payload.get("action")
         target_url = payload.get("target_url")
         if not action or not target_url:
@@ -87,7 +128,8 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            async with httpx.AsyncClient() as http_client:
+                resp = await http_client.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
             return {
                 "status": "execution_successful",
                 "action": action,
@@ -101,7 +143,7 @@ class IPersuasionAgent(BaseAgent):
     """Motor de Persuasão (Persuasion)
     Responsibility: Application of Cialdini triggers via OpenAI.
     """
-    def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         trigger = payload.get("trigger", "reciprocity")
         context = payload.get("context", "networking")
 
@@ -110,7 +152,7 @@ class IPersuasionAgent(BaseAgent):
 
         prompt = f"Write a short, persuasive message applying the Cialdini principle of '{trigger}' for the following context: '{context}'."
 
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are an expert copywriter specialized in Cialdini's persuasion triggers."},
@@ -128,7 +170,7 @@ class IScribeAgent(BaseAgent):
     """Agente Escriba (Scribe)
     Responsibility: The 'Persona', NLP generation via OpenAI.
     """
-    def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         draft = payload.get("draft_text", "")
         if not draft:
             raise ValueError("draft_text required for ScribeAgent")
@@ -138,7 +180,7 @@ class IScribeAgent(BaseAgent):
 
         prompt = f"Rewrite the following draft to match the confident, direct persona of 'Alex'. Draft: {draft}"
 
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are 'Alex', acting as a confident persona rewriting text."},
@@ -160,7 +202,7 @@ class ILearningAgent(BaseAgent):
     Responsibility: Heuristics, Shadow ban validation.
     Implemented locally via in-memory rate limit checking.
     """
-    def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         target_id = payload.get("target_id")
         if not target_id:
             raise ValueError("target_id required for LearningAgent")

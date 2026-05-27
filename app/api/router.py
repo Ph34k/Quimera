@@ -39,57 +39,57 @@ def health_check():
     return {"status": "healthy"}
 
 @api_router.post("/scout/mission", response_model=ScoutMissionResponse)
-def dispatch_scout_mission(request: ScoutMissionRequest):
+async def dispatch_scout_mission(request: ScoutMissionRequest):
     """
     Despacha o Agente Batedor (Scout) para analisar um alvo executando uma chamada real.
     """
     try:
-        result = scout_agent.execute({"target_url": request.target_url})
+        result = await scout_agent.execute({"target_url": request.target_url})
         return ScoutMissionResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/analyst/process", response_model=GenericResponse)
-def run_analyst(request: GenericRequest):
+async def run_analyst(request: GenericRequest):
     """Executes the Analyst Agent."""
     try:
-        result = analyst_agent.execute(request.payload)
+        result = await analyst_agent.execute(request.payload)
         return GenericResponse(result=result)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.post("/execution/run", response_model=GenericResponse)
-def run_execution(request: GenericRequest):
+async def run_execution(request: GenericRequest):
     """Executes the Execution Agent."""
     try:
-        result = execution_agent.execute(request.payload)
+        result = await execution_agent.execute(request.payload)
         return GenericResponse(result=result)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.post("/persuasion/generate", response_model=GenericResponse)
-def run_persuasion(request: GenericRequest):
+async def run_persuasion(request: GenericRequest):
     """Executes the Persuasion Agent."""
     try:
-        result = persuasion_agent.execute(request.payload)
+        result = await persuasion_agent.execute(request.payload)
         return GenericResponse(result=result)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.post("/scribe/rewrite", response_model=GenericResponse)
-def run_scribe(request: GenericRequest):
+async def run_scribe(request: GenericRequest):
     """Executes the Scribe Agent."""
     try:
-        result = scribe_agent.execute(request.payload)
+        result = await scribe_agent.execute(request.payload)
         return GenericResponse(result=result)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.post("/learning/check", response_model=GenericResponse)
-def run_learning(request: GenericRequest):
+async def run_learning(request: GenericRequest):
     """Executes the Learning Agent."""
     try:
-        result = learning_agent.execute(request.payload)
+        result = await learning_agent.execute(request.payload)
         return GenericResponse(result=result)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
