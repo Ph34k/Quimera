@@ -1,0 +1,4 @@
+## 2024-05-24 - Unauthenticated Elasticsearch Instance
+**Vulnerability:** Elasticsearch instances were misconfigured with `xpack.security.enabled=false`, which disables authentication and exposes the database to potential unauthorized access, data theft, and remote execution.
+**Learning:** Default deployments often have security disabled to ease development, but this is extremely risky, even in seemingly internal network environments. Always enforce authentication and minimal permissions.
+**Prevention:** Always set `xpack.security.enabled=true` when provisioning Elasticsearch. For environments not utilizing HTTPS, explicitly configure `xpack.security.http.ssl.enabled=false` rather than turning off security entirely. Ensure credentials are provided securely via environment variables or secrets managers.
