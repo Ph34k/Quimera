@@ -1,3 +1,4 @@
+import collections
 from abc import ABC, abstractmethod
 from typing import Dict, Any
 
@@ -153,7 +154,8 @@ class IScribeAgent(BaseAgent):
         }
 
 # Global in-memory store for rate limiting
-_LEARNING_DB = {}
+_LEARNING_DB = collections.OrderedDict()
+_LEARNING_DB_MAX_SIZE = 1000
 
 class ILearningAgent(BaseAgent):
     """Agente de Aprendizagem (Learning)
@@ -166,6 +168,11 @@ class ILearningAgent(BaseAgent):
             raise ValueError("target_id required for LearningAgent")
 
         current_time = time.time()
+
+        # move to end if target_id exists to keep it recent in LRU
+        if target_id in _LEARNING_DB:
+            _LEARNING_DB.move_to_end(target_id)
+
         last_action = _LEARNING_DB.get(target_id, 0)
 
         # If action happened less than 60 seconds ago, flag as potential shadowban risk
@@ -176,6 +183,8 @@ class ILearningAgent(BaseAgent):
             is_safe = True
             risk_level = "Low"
             _LEARNING_DB[target_id] = current_time
+            if len(_LEARNING_DB) > _LEARNING_DB_MAX_SIZE:
+                _LEARNING_DB.popitem(last=False)
 
         return {
             "status": "learning_validation_complete",
