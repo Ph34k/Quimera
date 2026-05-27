@@ -68,3 +68,29 @@ def test_learning_agent():
     response2 = client.post("/api/v1/learning/check", json=payload)
     data2 = response2.json()["result"]
     assert data2["is_safe_to_engage"] is False
+
+def test_project_manager_agent():
+    # Test get_project_context
+    payload = {"payload": {"request_type": "get_project_context"}}
+    response = client.post("/api/v1/project-manager/execute", json=payload)
+    assert response.status_code == 200
+    data = response.json()["result"]
+    assert data["requesting_agent"] == "project-manager"
+    assert data["request_type"] == "get_project_context"
+
+    # Test status_update
+    payload2 = {"payload": {"request_type": "status_update"}}
+    response2 = client.post("/api/v1/project-manager/execute", json=payload2)
+    assert response2.status_code == 200
+    data2 = response2.json()["result"]
+    assert data2["agent"] == "project-manager"
+    assert data2["status"] == "executing"
+    assert "progress" in data2
+    assert data2["progress"]["completion"] == "73%"
+
+    # Test completion
+    payload3 = {"payload": {"request_type": "completion"}}
+    response3 = client.post("/api/v1/project-manager/execute", json=payload3)
+    assert response3.status_code == 200
+    data3 = response3.json()["result"]
+    assert data3["status"] == "project_completed"

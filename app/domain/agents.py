@@ -183,3 +183,38 @@ class ILearningAgent(BaseAgent):
             "is_safe_to_engage": is_safe,
             "risk_level": risk_level
         }
+
+
+class IProjectManagerAgent(BaseAgent):
+    """Project Manager Agent
+    Responsibility: Leading complex projects, tracking progress, project context assessment.
+    """
+    def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        request_type = payload.get("request_type")
+
+        if request_type == "get_project_context":
+            return {
+                "requesting_agent": "project-manager",
+                "request_type": "get_project_context",
+                "payload": {
+                    "query": "Project context needed: objectives, scope, timeline, budget, resources, stakeholders, and success criteria."
+                }
+            }
+        elif request_type == "status_update":
+            return {
+                "agent": "project-manager",
+                "status": "executing",
+                "progress": {
+                    "completion": "73%",
+                    "on_schedule": True,
+                    "budget_used": "68%",
+                    "risks_mitigated": 14
+                }
+            }
+        elif request_type == "completion":
+            return {
+                "status": "project_completed",
+                "message": "Project completed successfully. Delivered 73% ahead of original timeline with 5% under budget. Mitigated 14 major risks achieving zero critical issues. Stakeholder satisfaction 96% with all objectives exceeded. Team productivity improved by 32%."
+            }
+        else:
+            raise ValueError(f"Unknown request_type for ProjectManagerAgent: {request_type}")

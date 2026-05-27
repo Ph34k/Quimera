@@ -4,7 +4,8 @@ from typing import Optional
 from typing import Any, Dict
 from app.domain.agents import (
     IScoutAgent, IAnalystAgent, IExecutionAgent,
-    IPersuasionAgent, IScribeAgent, ILearningAgent
+    IPersuasionAgent, IScribeAgent, ILearningAgent,
+    IProjectManagerAgent
 )
 
 api_router = APIRouter()
@@ -14,6 +15,7 @@ execution_agent = IExecutionAgent()
 persuasion_agent = IPersuasionAgent()
 scribe_agent = IScribeAgent()
 learning_agent = ILearningAgent()
+project_manager_agent = IProjectManagerAgent()
 
 class GenericRequest(BaseModel):
     payload: Dict[str, Any]
@@ -54,6 +56,16 @@ def run_analyst(request: GenericRequest):
     """Executes the Analyst Agent."""
     try:
         result = analyst_agent.execute(request.payload)
+        return GenericResponse(result=result)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@api_router.post("/project-manager/execute", response_model=GenericResponse)
+def run_project_manager(request: GenericRequest):
+    """Executes the Project Manager Agent."""
+    try:
+        result = project_manager_agent.execute(request.payload)
         return GenericResponse(result=result)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
