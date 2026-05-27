@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import Optional
-from typing import Any, Dict
 from app.domain.agents import (
     IScoutAgent, IAnalystAgent, IExecutionAgent,
     IPersuasionAgent, IScribeAgent, ILearningAgent
+)
+from app.schemas.agents import (
+    GenericRequest, GenericResponse,
+    ScoutMissionRequest, ScoutMissionResponse
 )
 
 api_router = APIRouter()
@@ -14,24 +15,6 @@ execution_agent = IExecutionAgent()
 persuasion_agent = IPersuasionAgent()
 scribe_agent = IScribeAgent()
 learning_agent = ILearningAgent()
-
-class GenericRequest(BaseModel):
-    payload: Dict[str, Any]
-
-class GenericResponse(BaseModel):
-    result: Dict[str, Any]
-
-class ScoutMissionRequest(BaseModel):
-    target_url: str
-    depth: int = 1
-
-class ScoutMissionResponse(BaseModel):
-    status: str
-    mission_id: str
-    target: str
-    http_status: Optional[int] = None
-    content_length: Optional[int] = None
-    error: Optional[str] = None
 
 @api_router.get("/health")
 def health_check():
