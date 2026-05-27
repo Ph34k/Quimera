@@ -15,6 +15,16 @@ class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
     Responsibility: OSINT, Web Scraping, Target Identification
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.client = httpx.Client(timeout=5.0)
+
+    def __del__(self):
+        try:
+            self.client.close()
+        except Exception:
+            pass
+
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         target_url = payload.get("target_url")
         if not target_url:
@@ -22,7 +32,7 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            response = self.client.get(target_url)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
