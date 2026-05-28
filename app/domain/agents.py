@@ -10,6 +10,21 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import ipaddress
+import socket
+
+def _verify_request(request: httpx.Request):
+    url = request.url
+    hostname = url.host
+    try:
+        addrinfo = socket.getaddrinfo(hostname, None)
+        for family, type, proto, canonname, sockaddr in addrinfo:
+            ip = ipaddress.ip_address(sockaddr[0])
+            if not ip.is_global:
+                raise ValueError(f"SSRF attempt blocked: {ip} is not a global IP")
+    except socket.gaierror:
+        raise ValueError(f"Could not resolve hostname: {hostname}")
+
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -22,7 +37,8 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            with httpx.Client(event_hooks={'request': [_verify_request]}) as client_http:
+                response = client_http.get(target_url, timeout=5.0)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +103,8 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            with httpx.Client(event_hooks={'request': [_verify_request]}) as client_http:
+                resp = client_http.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
             return {
                 "status": "execution_successful",
                 "action": action,
