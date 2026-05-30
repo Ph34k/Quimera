@@ -1,0 +1,3 @@
+## 2024-05-30 - Persistent HTTP Connections in Singleton Agents
+**Learning:** Using `httpx.get` creates a new connection pool per request, which is inefficient. For long-lived or singleton agents like `IScoutAgent` and `IExecutionAgent`, using a persistent `httpx.Client` with connection pooling significantly improves performance. However, to prevent resource leaks, these clients must be explicitly closed, for example, by implementing a `__del__` method.
+**Action:** Always instantiate `httpx.Client` for repeated network requests within singletons/agents and implement `__del__` to cleanly close the client.
