@@ -9,14 +9,11 @@ class Settings:
 
     # API / Security
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "default_secret_key_for_dev")
+    SECRET_KEY: Optional[str] = os.getenv("SECRET_KEY")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
 
     # Database
-    POSTGRES_URL: str = os.getenv(
-        "POSTGRES_URL",
-        "postgresql://quimera_user:quimera_password@localhost:5432/quimera_db"
-    )
+    POSTGRES_URL: Optional[str] = os.getenv("POSTGRES_URL")
 
     # Cache / Search
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
