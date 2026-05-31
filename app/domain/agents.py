@@ -11,6 +11,28 @@ class BaseAgent(ABC):
 import httpx
 import uuid
 
+import socket
+import ipaddress
+from urllib.parse import urlparse
+
+def _validate_url_for_ssrf(url: str) -> None:
+    parsed = urlparse(url)
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError("Invalid URL: missing hostname")
+
+    try:
+        addr_info = socket.getaddrinfo(hostname, 80, proto=socket.IPPROTO_TCP)
+    except socket.gaierror:
+        raise ValueError(f"Could not resolve hostname: {hostname}")
+
+    for info in addr_info:
+        ip_str = info[4][0]
+        ip = ipaddress.ip_address(ip_str)
+        if not ip.is_global:
+            raise ValueError(f"SSRF detected: URL resolves to non-global IP {ip_str}")
+
+
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
     Responsibility: OSINT, Web Scraping, Target Identification
@@ -21,8 +43,18 @@ class IScoutAgent(BaseAgent):
             raise ValueError("target_url is required for ScoutAgent")
 
         try:
+            _validate_url_for_ssrf(target_url)
+        except ValueError as e:
+            return {
+                "status": "failed",
+                "mission_id": str(uuid.uuid4()),
+                "target": target_url,
+                "error": str(e)
+            }
+
+        try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            response = httpx.get(target_url, timeout=5.0, follow_redirects=False)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -85,9 +117,14 @@ class IExecutionAgent(BaseAgent):
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
 
+        try:
+            _validate_url_for_ssrf(target_url)
+        except ValueError as e:
+            return {"status": "execution_failed", "error": str(e)}
+
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=False)
             return {
                 "status": "execution_successful",
                 "action": action,
