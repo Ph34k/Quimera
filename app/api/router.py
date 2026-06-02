@@ -46,6 +46,8 @@ def dispatch_scout_mission(request: ScoutMissionRequest):
     try:
         result = scout_agent.execute({"target_url": request.target_url})
         return ScoutMissionResponse(**result)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -64,6 +66,8 @@ def run_execution(request: GenericRequest):
     try:
         result = execution_agent.execute(request.payload)
         return GenericResponse(result=result)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
