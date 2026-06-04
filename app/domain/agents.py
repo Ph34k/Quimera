@@ -1,5 +1,12 @@
+import time
+import uuid
+
+import httpx
+from openai import OpenAI
 from abc import ABC, abstractmethod
 from typing import Dict, Any
+
+from app.core.config import settings
 
 class BaseAgent(ABC):
     """Abstract Base Class for all Quimera Agents."""
@@ -7,9 +14,6 @@ class BaseAgent(ABC):
     @abstractmethod
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         pass
-
-import httpx
-import uuid
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -37,10 +41,6 @@ class IScoutAgent(BaseAgent):
                 "target": target_url,
                 "error": str(e)
             }
-
-import time
-from openai import OpenAI
-from app.core.config import settings
 
 # Initialize real OpenAI client
 _openai_api_key = settings.OPENAI_API_KEY
