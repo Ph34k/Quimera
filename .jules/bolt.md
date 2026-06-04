@@ -1,0 +1,3 @@
+## 2024-06-04 - Persistent Connection Pooling for Synchronous Agents
+**Learning:** In architectures where singleton agents repeatedly call `httpx.get()` synchronously, omitting a persistent `httpx.Client()` causes significant TCP and TLS handshake overhead (~50% slower per request). While async would provide concurrency, a persistent synchronous client is a less disruptive win for this architecture.
+**Action:** Always wrap synchronous HTTP calls in a persistent `httpx.Client` bound to the agent instance (`__init__`) and cleanly close it in `__del__` to prevent connection leaks, avoiding architectural changes to async/await if not requested.
