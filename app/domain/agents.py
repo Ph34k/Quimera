@@ -10,6 +10,7 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+from app.core.security import is_safe_url
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -20,9 +21,18 @@ class IScoutAgent(BaseAgent):
         if not target_url:
             raise ValueError("target_url is required for ScoutAgent")
 
+        if not is_safe_url(target_url):
+            return {
+                "status": "failed",
+                "mission_id": str(uuid.uuid4()),
+                "target": target_url,
+                "error": "Security Error: Target URL resolves to a forbidden IP address (SSRF mitigation)."
+            }
+
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # Disable redirects to prevent bypassing SSRF validation
+            response = httpx.get(target_url, timeout=5.0, follow_redirects=False)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -85,9 +95,13 @@ class IExecutionAgent(BaseAgent):
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
 
+        if not is_safe_url(target_url):
+            return {"status": "execution_failed", "error": "Security Error: Target URL resolves to a forbidden IP address (SSRF mitigation)."}
+
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # Disable redirects to prevent bypassing SSRF validation
+            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=False)
             return {
                 "status": "execution_successful",
                 "action": action,
