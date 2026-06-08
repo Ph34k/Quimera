@@ -11,6 +11,11 @@ class BaseAgent(ABC):
 import httpx
 import uuid
 
+# ⚡ Bolt: Use a persistent HTTPx client to enable connection pooling.
+# This prevents the overhead of creating a new connection for every request,
+# resulting in significantly faster API calls compared to httpx.get()
+_http_client = httpx.Client(timeout=5.0)
+
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
     Responsibility: OSINT, Web Scraping, Target Identification
@@ -22,7 +27,7 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            response = _http_client.get(target_url)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +92,7 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            resp = _http_client.get(target_url, headers=headers, follow_redirects=True)
             return {
                 "status": "execution_successful",
                 "action": action,
