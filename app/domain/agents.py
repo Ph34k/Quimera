@@ -10,6 +10,27 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import socket
+import ipaddress
+from urllib.parse import urlparse
+
+def _is_safe_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return False
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        addr_info = socket.getaddrinfo(hostname, None)
+        for result in addr_info:
+            ip_str = result[4][0]
+            ip_obj = ipaddress.ip_address(ip_str)
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_multicast:
+                return False
+        return True
+    except Exception:
+        return False
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -20,9 +41,19 @@ class IScoutAgent(BaseAgent):
         if not target_url:
             raise ValueError("target_url is required for ScoutAgent")
 
+        # Security validation to prevent Server-Side Request Forgery (SSRF) to internal network resources
+        if not _is_safe_url(target_url):
+            return {
+                "status": "failed",
+                "mission_id": str(uuid.uuid4()),
+                "target": target_url,
+                "error": "Invalid or unsafe target URL"
+            }
+
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # follow_redirects=False prevents SSRF via redirect to internal IP (e.g. 169.254.169.254)
+            response = httpx.get(target_url, timeout=5.0, follow_redirects=False)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -85,9 +116,14 @@ class IExecutionAgent(BaseAgent):
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
 
+        # Security validation to prevent Server-Side Request Forgery (SSRF) to internal network resources
+        if not _is_safe_url(target_url):
+            return {"status": "execution_failed", "error": "Invalid or unsafe target URL"}
+
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # follow_redirects=False prevents SSRF via redirect to internal IP (e.g. 169.254.169.254)
+            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=False)
             return {
                 "status": "execution_successful",
                 "action": action,
