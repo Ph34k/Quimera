@@ -10,6 +10,22 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import socket
+import ipaddress
+from urllib.parse import urlparse
+
+def _is_safe_url(url: str) -> bool:
+    """Security check: Prevent SSRF by ensuring the target URL resolves only to public IPs."""
+    try:
+        hostname = urlparse(url).hostname
+        if not hostname: return False
+        for info in socket.getaddrinfo(hostname, None):
+            ip_obj = ipaddress.ip_address(info[4][0])
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local:
+                return False
+        return True
+    except Exception:
+        return False
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -20,9 +36,19 @@ class IScoutAgent(BaseAgent):
         if not target_url:
             raise ValueError("target_url is required for ScoutAgent")
 
+        # Security: Prevent SSRF vulnerability by blocking requests to private/internal IPs
+        if not _is_safe_url(target_url):
+            return {
+                "status": "failed",
+                "mission_id": str(uuid.uuid4()),
+                "target": target_url,
+                "error": "Security Error: Target URL is not allowed."
+            }
+
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # Security: Disable redirects to prevent SSRF bypass via external-to-internal redirects
+            response = httpx.get(target_url, timeout=5.0, follow_redirects=False)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -85,9 +111,14 @@ class IExecutionAgent(BaseAgent):
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
 
+        # Security: Prevent SSRF vulnerability by blocking requests to private/internal IPs
+        if not _is_safe_url(target_url):
+            return {"status": "execution_failed", "error": "Security Error: Target URL is not allowed."}
+
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # Security: Disable redirects to prevent SSRF bypass via external-to-internal redirects
+            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=False)
             return {
                 "status": "execution_successful",
                 "action": action,
