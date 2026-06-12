@@ -1,0 +1,3 @@
+## 2024-05-24 - Optimizing HTTP requests in Agents
+**Learning:** In `app/domain/agents.py`, agents making external requests (`IScoutAgent`, `IExecutionAgent`) rely on the implicit `httpx.get` method, which instantiates a new HTTP connection for each request without connection pooling. This causes significant overhead (up to ~3-4x slower locally) for sequential or repeated requests compared to reusing a persistent `httpx.Client()`.
+**Action:** Use a persistent `httpx.Client()` as a class attribute with connection pooling for agents performing synchronous HTTP requests, and ensure the client is explicitly closed during the application lifecycle to prevent resource leaks.

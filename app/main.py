@@ -11,6 +11,12 @@ app = FastAPI(
 # Include MVP routers
 app.include_router(api_router, prefix="/api/v1")
 
+@app.on_event("shutdown")
+def shutdown_event():
+    from app.api.router import scout_agent, execution_agent
+    scout_agent.close()
+    execution_agent.close()
+
 @app.get("/")
 def read_root():
     return {
