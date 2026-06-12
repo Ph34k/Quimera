@@ -10,6 +10,21 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import socket
+import ipaddress
+from urllib.parse import urlparse
+
+def _is_safe_url(url: str) -> bool:
+    """Security: Prevent SSRF by checking for private/loopback IPs."""
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ('http', 'https'): return False
+        for info in socket.getaddrinfo(parsed.hostname, None):
+            ip = ipaddress.ip_address(info[4][0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local: return False
+        return True
+    except Exception:
+        return False
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -17,12 +32,13 @@ class IScoutAgent(BaseAgent):
     """
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         target_url = payload.get("target_url")
-        if not target_url:
-            raise ValueError("target_url is required for ScoutAgent")
+        if not target_url or not _is_safe_url(target_url):
+            raise ValueError("target_url is required and must be safe for ScoutAgent")
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # Security: follow_redirects=False prevents SSRF via redirect to internal IPs
+            response = httpx.get(target_url, timeout=5.0, follow_redirects=False)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -82,12 +98,13 @@ class IExecutionAgent(BaseAgent):
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         action = payload.get("action")
         target_url = payload.get("target_url")
-        if not action or not target_url:
-            raise ValueError("action and target_url required for ExecutionAgent")
+        if not action or not target_url or not _is_safe_url(target_url):
+            raise ValueError("action and safe target_url required for ExecutionAgent")
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # Security: follow_redirects=False prevents SSRF via redirect
+            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=False)
             return {
                 "status": "execution_successful",
                 "action": action,
