@@ -1,4 +1,4 @@
-## 2026-05-27 - Elasticsearch Security
-**Vulnerability:** Disabled Elasticsearch security (xpack.security.enabled=false).
-**Learning:** Elasticsearch should have security enabled to prevent unauthorized access to data.
-**Prevention:** Always set xpack.security.enabled=true and configure credentials.
+## 2024-06-13 - Mitigated SSRF in IScoutAgent and IExecutionAgent
+**Vulnerability:** The `IScoutAgent` and `IExecutionAgent` were performing HTTP requests (via `httpx.get`) based on user-supplied `target_url` payloads without any validation. They also had `follow_redirects=True` or default enabled. This allowed for Server-Side Request Forgery (SSRF), permitting attackers to make the server scan or access internal infrastructure (like `localhost` or metadata endpoints `169.254.169.254`).
+**Learning:** In agent architectures where targets are provided by external triggers, lack of URL validation combined with default HTTP library settings is a critical risk. Validating just the initial URL scheme/hostname is insufficient if `follow_redirects` allows bouncing from a public URL to an internal IP. Additionally, IP validation must use `socket.getaddrinfo()` to be robust in IPv6 environments, rather than just `socket.gethostbyname()`. Furthermore, it's critical to check for `is_unspecified` (`0.0.0.0`) in the IP address, as these will often route to localhost.
+**Prevention:** Implement a robust `_is_safe_url` helper that resolves hostnames to IPs and explicitly blocks private/loopback/link-local/unspecified ranges before issuing the request. Crucially, set `follow_redirects=False` on the HTTP client to ensure the request is not maliciously redirected to an internal endpoint after initial validation.

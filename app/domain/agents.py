@@ -9,7 +9,25 @@ class BaseAgent(ABC):
         pass
 
 import httpx
+import socket
+import ipaddress
+from urllib.parse import urlparse
 import uuid
+
+
+def _is_safe_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            return False
+        # Mitigate SSRF: Resolve IP and block internal/private/loopback IPs
+        for result in socket.getaddrinfo(parsed.hostname, None):
+            ip_obj = ipaddress.ip_address(result[4][0])
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+                return False
+        return True
+    except Exception:
+        return False
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -20,9 +38,19 @@ class IScoutAgent(BaseAgent):
         if not target_url:
             raise ValueError("target_url is required for ScoutAgent")
 
+        # SECURITY: SSRF Mitigation
+        if not _is_safe_url(target_url):
+            return {
+                "status": "failed",
+                "mission_id": str(uuid.uuid4()),
+                "target": target_url,
+                "error": "Security Error: URL is not safe or points to an internal IP."
+            }
+
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # SECURITY: follow_redirects=False prevents attackers from redirecting a safe URL to an internal IP
+            response = httpx.get(target_url, timeout=5.0, follow_redirects=False)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -85,9 +113,14 @@ class IExecutionAgent(BaseAgent):
         if not action or not target_url:
             raise ValueError("action and target_url required for ExecutionAgent")
 
+        # SECURITY: SSRF Mitigation
+        if not _is_safe_url(target_url):
+            return {"status": "execution_failed", "error": "Security Error: URL is not safe or points to an internal IP."}
+
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # SECURITY: follow_redirects=False prevents attackers from redirecting a safe URL to an internal IP
+            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=False)
             return {
                 "status": "execution_successful",
                 "action": action,
