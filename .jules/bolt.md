@@ -1,0 +1,3 @@
+## 2024-05-18 - Persistent httpx Client Connection Pooling
+**Learning:** Using a persistent `httpx.Client()` reuses underlying TCP/TLS connections resulting in ~60% faster requests (e.g. from 0.566s to 0.225s for 5 requests). However, a persistent client will persist cookies across requests by default, leading to state leakage.
+**Action:** When implementing a persistent `httpx.Client()` for stateless agents (like `IScoutAgent` or `IExecutionAgent`) targeting the same domains, always explicitly clear the client's cookie jar (e.g., `self._client.cookies.clear()`) before executing requests, and provide a `close()` method to clean up resources properly.
