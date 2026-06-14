@@ -10,6 +10,27 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import socket
+import ipaddress
+from urllib.parse import urlparse
+
+def _is_safe_url(url_str: str) -> bool:
+    try:
+        parsed = urlparse(str(url_str))
+        if not parsed.hostname: return False
+        ip_obj = ipaddress.ip_address(socket.gethostbyname(parsed.hostname))
+        return not (ip_obj.is_loopback or ip_obj.is_private or ip_obj.is_link_local or ip_obj.is_unspecified)
+    except Exception:
+        return False
+
+def _ssrf_hook(request):
+    # Security concern: Validate URL at each request step to prevent SSRF bypasses via redirects.
+    if not _is_safe_url(str(request.url)):
+        raise ValueError("Blocked SSRF attempt")
+
+def _get_secure_client(**kwargs):
+    return httpx.Client(event_hooks={'request': [_ssrf_hook]}, **kwargs)
+
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -22,7 +43,8 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            with _get_secure_client(timeout=5.0) as client:
+                response = client.get(target_url)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +109,8 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            with _get_secure_client(timeout=5.0, follow_redirects=True) as client:
+                resp = client.get(target_url, headers=headers)
             return {
                 "status": "execution_successful",
                 "action": action,
