@@ -10,11 +10,27 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import ipaddress
+import socket
+
+def _validate_ssrf(request: httpx.Request):
+    hostname = request.url.host
+    try:
+        ip_str = socket.gethostbyname(hostname)
+        ip_obj = ipaddress.ip_address(ip_str)
+        if ip_obj.is_unspecified or ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local:
+            raise Exception(f"SSRF blocked: Restricted IP {ip_str}")
+    except socket.gaierror:
+        raise Exception(f"SSRF blocked: Unresolvable host {hostname}")
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
     Responsibility: OSINT, Web Scraping, Target Identification
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.client = httpx.Client(event_hooks={'request': [_validate_ssrf]}, follow_redirects=True)
+
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         target_url = payload.get("target_url")
         if not target_url:
@@ -22,7 +38,8 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # Security Note: Using configured client to prevent SSRF
+            response = self.client.get(target_url, timeout=5.0)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -79,6 +96,11 @@ class IExecutionAgent(BaseAgent):
     """Agente de Execução (Execution)
     Responsibility: Real Stealth web driving (via HTTPx with advanced headers).
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Security Note: Reusing SSRF validation
+        self.client = httpx.Client(event_hooks={'request': [_validate_ssrf]}, follow_redirects=True)
+
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         action = payload.get("action")
         target_url = payload.get("target_url")
@@ -87,7 +109,9 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # Security Note: Using configured client to prevent SSRF and clearing cookies for statelessness
+            self.client.cookies.clear()
+            resp = self.client.get(target_url, headers=headers, timeout=5.0)
             return {
                 "status": "execution_successful",
                 "action": action,
