@@ -1,4 +1,4 @@
-## 2026-05-27 - Elasticsearch Security
-**Vulnerability:** Disabled Elasticsearch security (xpack.security.enabled=false).
-**Learning:** Elasticsearch should have security enabled to prevent unauthorized access to data.
-**Prevention:** Always set xpack.security.enabled=true and configure credentials.
+## 2024-06-15 - Prevent SSRF in HTTP agents
+**Vulnerability:** HTTP agents (IScoutAgent and IExecutionAgent) allowed arbitrary user-provided URLs to be fetched via `httpx.get` without IP validation, enabling SSRF attacks against internal network resources.
+**Learning:** When using `httpx` with `follow_redirects=True`, merely validating the initial URL is insufficient. To prevent SSRF bypasses via redirects to local/private IPs, an event hook (`event_hooks={'request': [...]}`) must be used to validate the resolved IP of the target URL at every step.
+**Prevention:** Always implement robust hostname-to-IP resolution checks (blocking private, loopback, link-local, and unspecified IPs) inside a request hook before making web requests with user-controlled input.
