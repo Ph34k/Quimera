@@ -10,6 +10,22 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import socket
+import ipaddress
+
+def _validate_request_url(request: httpx.Request):
+    """Security Comment: Prevents SSRF by validating the resolved IP address of the target URL.
+    Blocks access to internal, private, loopback, and unspecified IPs (e.g., 127.0.0.1, 0.0.0.0, 192.168.x.x).
+    """
+    hostname = request.url.host
+    try:
+        ip_addr = socket.gethostbyname(hostname)
+        ip_obj = ipaddress.ip_address(ip_addr)
+        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+            raise ValueError(f"Security concern: Blocked access to internal IP: {ip_addr}")
+    except socket.gaierror:
+        raise ValueError(f"Security concern: Could not resolve hostname: {hostname}")
+
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -21,8 +37,9 @@ class IScoutAgent(BaseAgent):
             raise ValueError("target_url is required for ScoutAgent")
 
         try:
-            # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # Security Comment: Using an httpx Client with a request hook to prevent SSRF vulnerabilities.
+            with httpx.Client(timeout=5.0, event_hooks={'request': [_validate_request_url]}) as client:
+                response = client.get(target_url)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +104,9 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # Security Comment: Using an httpx Client with a request hook to prevent SSRF vulnerabilities across redirects.
+            with httpx.Client(timeout=5.0, follow_redirects=True, event_hooks={'request': [_validate_request_url]}) as client:
+                resp = client.get(target_url, headers=headers)
             return {
                 "status": "execution_successful",
                 "action": action,
