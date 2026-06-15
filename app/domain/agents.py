@@ -21,8 +21,10 @@ class IScoutAgent(BaseAgent):
             raise ValueError("target_url is required for ScoutAgent")
 
         try:
-            # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # SECURITY FIX: Prevent SSRF by validating the target IP via hook
+            from app.core.security import validate_request_hook
+            with httpx.Client(event_hooks={'request': [validate_request_hook]}, timeout=5.0) as client:
+                response = client.get(target_url)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +89,10 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # SECURITY FIX: Prevent SSRF while allowing safe redirects via hook
+            from app.core.security import validate_request_hook
+            with httpx.Client(event_hooks={'request': [validate_request_hook]}, timeout=5.0, follow_redirects=True) as client:
+                resp = client.get(target_url, headers=headers)
             return {
                 "status": "execution_successful",
                 "action": action,
