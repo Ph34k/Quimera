@@ -1,0 +1,12 @@
+version: "1.0"
+rules:
+  - id: "rule_1"
+    description: "If user is highly active, use aggressive persuasion."
+    condition:
+      activity_level: "high"
+    strategy: "aggressive"
+  - id: "rule_2"
+    description: "If user is low activity, use gentle persuasion."
+    condition:
+      activity_level: "low"
+    strategy: "gentle"
