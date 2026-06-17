@@ -1,0 +1,3 @@
+## 2024-06-25 - HTTP Connection Pooling in Domain Agents
+**Learning:** Singleton agents executing frequent HTTP requests via `httpx.get` individually incur significant performance overhead by establishing a new TCP connection and TLS handshake for every call.
+**Action:** Implement connection pooling by instantiating a persistent `httpx.Client` in the agent's `__init__` and closing it in `__del__`. This allows requests within the module (since agents are instantiated once in `router.py`) to share the same underlying connection pool.
