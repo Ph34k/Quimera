@@ -1,0 +1,6 @@
+interface:
+  display_name: "Quimera"
+  short_description: "Repo-specific patterns and workflows for Quimera"
+  default_prompt: "Use the Quimera repo skill to follow existing architecture, testing, and workflow conventions."
+policy:
+  allow_implicit_invocation: true
