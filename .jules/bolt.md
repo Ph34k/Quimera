@@ -1,0 +1,3 @@
+## 2024-05-16 - Connection Pooling in Singleton Agents
+**Learning:** Instantiating `httpx.get()` directly in a singleton agent's `execute` method causes a new connection pool to be created on every request, which introduces latency and overhead. Because domain agents (like `IScoutAgent` and `IExecutionAgent`) are instantiated as singletons by module-level instances in `app/api/router.py`, we can implement persistent HTTP connection pooling.
+**Action:** Move `httpx.Client()` initialization into the agent's `__init__` method to reuse a single persistent connection pool across all `execute` calls. Always ensure to add `__del__` with a safe cleanup mechanism (`try: self.client.close() except Exception: pass`) to avoid resource leaks during teardown.
