@@ -6,3 +6,5 @@ dashboard/
 uml/
 __pycache__/
 *.pyc
+venv/
+test_ssrf.py

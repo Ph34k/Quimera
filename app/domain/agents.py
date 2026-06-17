@@ -10,6 +10,22 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import socket
+import ipaddress
+
+def _validate_ssrf(request: httpx.Request):
+    """
+    Security check: Prevent SSRF by validating that the resolved IP of the URL
+    is not a private, loopback, link-local, or unspecified address (e.g. 0.0.0.0).
+    """
+    host = request.url.host
+    try:
+        ip = socket.gethostbyname(host)
+        ip_obj = ipaddress.ip_address(ip)
+        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+            raise ValueError(f"SSRF Blocked: Resolves to disallowed IP {ip}")
+    except socket.gaierror:
+        raise ValueError(f"SSRF Blocked: Could not resolve {host}")
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -22,7 +38,9 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # SECURITY: Use client with SSRF validation hook to prevent accessing internal network
+            with httpx.Client(event_hooks={'request': [_validate_ssrf]}, timeout=5.0) as client:
+                response = client.get(target_url)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +105,9 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # SECURITY: Use client with SSRF validation hook to prevent SSRF during redirects
+            with httpx.Client(event_hooks={'request': [_validate_ssrf]}, headers=headers, timeout=5.0, follow_redirects=True) as client:
+                resp = client.get(target_url)
             return {
                 "status": "execution_successful",
                 "action": action,
