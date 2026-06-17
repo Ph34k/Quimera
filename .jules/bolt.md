@@ -1,0 +1,3 @@
+## 2024-05-14 - HTTP Client Connection Pooling
+**Learning:** Instantiating `httpx.get` or a new `httpx.Client` per request drops TCP connections, causing overhead in high-throughput applications. Even in singletons, persistent HTTP clients must be explicitly managed.
+**Action:** Always instantiate a persistent `httpx.Client` within the class `__init__` for domain agents that perform web requests (e.g., `IScoutAgent`, `IExecutionAgent`), and add explicit lifecycle cleanup in `__del__` using a safe try-except block to prevent resource leaks during object destruction.
