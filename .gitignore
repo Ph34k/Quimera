@@ -6,3 +6,4 @@ dashboard/
 uml/
 __pycache__/
 *.pyc
+venv/

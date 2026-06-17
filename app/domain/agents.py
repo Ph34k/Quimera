@@ -10,6 +10,26 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import socket
+import ipaddress
+
+# SSRF Protection validation hook
+def _validate_url_ssrf(request: httpx.Request):
+    url = request.url
+    try:
+        ip_str = socket.gethostbyname(url.host)
+        ip_obj = ipaddress.ip_address(ip_str)
+        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+            raise ValueError(f"SSRF Protection: Blocked request to internal/private IP: {ip_str}")
+    except socket.gaierror:
+        raise ValueError(f"SSRF Protection: Could not resolve hostname: {url.host}")
+
+# Globally shared persistent client for safe connection pooling
+ssrf_safe_client = httpx.Client(
+    event_hooks={'request': [_validate_url_ssrf]},
+    follow_redirects=True
+)
+
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -21,8 +41,8 @@ class IScoutAgent(BaseAgent):
             raise ValueError("target_url is required for ScoutAgent")
 
         try:
-            # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # 🛡️ Sentinel: SSRF protection via custom event_hooks client
+            response = ssrf_safe_client.get(target_url, timeout=5.0)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +107,8 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # 🛡️ Sentinel: SSRF protection via custom event_hooks client
+            resp = ssrf_safe_client.get(target_url, headers=headers, timeout=5.0)
             return {
                 "status": "execution_successful",
                 "action": action,
