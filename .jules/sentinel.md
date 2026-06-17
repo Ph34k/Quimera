@@ -1,4 +1,4 @@
-## 2026-05-27 - Elasticsearch Security
-**Vulnerability:** Disabled Elasticsearch security (xpack.security.enabled=false).
-**Learning:** Elasticsearch should have security enabled to prevent unauthorized access to data.
-**Prevention:** Always set xpack.security.enabled=true and configure credentials.
+## 2025-02-28 - SSRF Vulnerability in Agent Web Requests
+**Vulnerability:** The `IScoutAgent` and `IExecutionAgent` in `app/domain/agents.py` blindly accepted user-provided URLs and fetched them using `httpx.get()` without validating the target IP. This allowed Server-Side Request Forgery (SSRF), enabling attackers to port-scan internal networks or access private metadata endpoints (e.g., AWS IMDS or local Redis) by supplying URLs like `http://127.0.0.1` or `http://169.254.169.254`.
+**Learning:** Naively relying on HTTP clients without input validation exposes the backend infrastructure to SSRF. Furthermore, relying purely on URL string validation is insufficient because redirects can bypass validation; validation must happen at the connection level via `event_hooks` (e.g., checking the resolved IP address) to catch redirects while preserving functionality (`follow_redirects=True`). Using a persistent `httpx.Client` ensures connection pooling works properly compared to ad-hoc context managers.
+**Prevention:** Always implement a dedicated `httpx.Client` with `event_hooks` for outbound requests to validate the resolved host IP. Utilize the `ipaddress` library to ensure IPs are not private, loopback, link-local, or unspecified (`0.0.0.0`).
