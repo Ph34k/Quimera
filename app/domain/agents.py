@@ -10,6 +10,26 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import socket
+import ipaddress
+from urllib.parse import urlparse
+
+def validate_url_for_ssrf(request: httpx.Request):
+    """Security check to prevent SSRF by blocking private/local IPs."""
+    parsed = urlparse(str(request.url))
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError("Invalid URL")
+    try:
+        ip = socket.gethostbyname(hostname)
+        ip_obj = ipaddress.ip_address(ip)
+        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+            raise ValueError("SSRF Attempt detected: IP is not allowed")
+    except socket.gaierror:
+        raise ValueError(f"Could not resolve hostname: {hostname}")
+
+# Security: Use a globally shared persistent client to manage connection pool safely
+safe_client = httpx.Client(event_hooks={'request': [validate_url_for_ssrf]}, follow_redirects=True)
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -22,7 +42,8 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # Security: Use safe_client to prevent SSRF
+            response = safe_client.get(target_url, timeout=5.0)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +108,8 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # Security: Use safe_client to prevent SSRF
+            resp = safe_client.get(target_url, headers=headers, timeout=5.0)
             return {
                 "status": "execution_successful",
                 "action": action,
