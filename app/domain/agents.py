@@ -11,6 +11,13 @@ class BaseAgent(ABC):
 import httpx
 import uuid
 
+# ⚡ Bolt Optimization: Shared HTTP Client
+# Using a global httpx.Client() enables HTTP connection pooling.
+# Instead of establishing a new connection for every single request (which is slow),
+# this reuses connections, significantly reducing latency and improving throughput
+# for Scout and Execution agents when processing multiple requests.
+http_client = httpx.Client()
+
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
     Responsibility: OSINT, Web Scraping, Target Identification
@@ -22,7 +29,8 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # ⚡ Bolt Optimization: using shared http_client instead of httpx.get
+            response = http_client.get(target_url, timeout=5.0)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +95,8 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # ⚡ Bolt Optimization: using shared http_client instead of httpx.get
+            resp = http_client.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
             return {
                 "status": "execution_successful",
                 "action": action,
