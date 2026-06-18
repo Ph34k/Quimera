@@ -11,6 +11,27 @@ class BaseAgent(ABC):
 import httpx
 import uuid
 
+import socket
+import ipaddress
+
+def _prevent_ssrf(request: httpx.Request):
+    host = request.url.host
+    try:
+        # Use getaddrinfo to support both IPv4 and IPv6
+        # socket.AF_UNSPEC gets both
+        addrinfo = socket.getaddrinfo(host, None)
+        # Extract the IPs from the result (it's a list of tuples)
+        ips = [info[4][0] for info in addrinfo]
+
+        for ip in ips:
+            ip_obj = ipaddress.ip_address(ip)
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+                raise ValueError(f"SSRF blocked: {ip}")
+    except socket.gaierror:
+        # Fail closed on DNS resolution errors
+        raise ValueError(f"SSRF blocked: Could not resolve host {host}")
+
+
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
     Responsibility: OSINT, Web Scraping, Target Identification
@@ -22,7 +43,9 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # SECURITY: SSRF protection on redirect chains
+            with httpx.Client(event_hooks={"request": [_prevent_ssrf]}, follow_redirects=True) as client:
+                response = client.get(target_url, timeout=5.0)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +110,9 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # SECURITY: SSRF protection on redirect chains
+            with httpx.Client(event_hooks={"request": [_prevent_ssrf]}, follow_redirects=True) as client:
+                resp = client.get(target_url, headers=headers, timeout=5.0)
             return {
                 "status": "execution_successful",
                 "action": action,
