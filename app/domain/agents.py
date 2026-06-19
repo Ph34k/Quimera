@@ -22,6 +22,25 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
+            # Security concern: SSRF Protection via URL validation
+            import socket, ipaddress
+            from urllib.parse import urlparse
+
+            parsed = urlparse(target_url)
+            host = parsed.hostname
+
+            if host:
+                try:
+                    addr_info = socket.getaddrinfo(host, None)
+                    for res in addr_info:
+                        ip_str = res[4][0]
+                        ip_obj = ipaddress.ip_address(ip_str)
+                        if (ip_obj.is_private or ip_obj.is_loopback or
+                            ip_obj.is_link_local or ip_obj.is_unspecified):
+                            raise ValueError(f"Access to restricted IP: {ip_str}")
+                except socket.gaierror:
+                    raise ValueError(f"DNS resolution failed for {host}")
+
             response = httpx.get(target_url, timeout=5.0)
             return {
                 "status": "success",
@@ -87,7 +106,27 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # Security concern: SSRF Protection via URL validation
+            import socket, ipaddress
+            from urllib.parse import urlparse
+
+            def validate_request_ip(request: httpx.Request):
+                url = request.url
+                host = url.host
+                try:
+                    addr_info = socket.getaddrinfo(host, None)
+                    for res in addr_info:
+                        ip_str = res[4][0]
+                        ip_obj = ipaddress.ip_address(ip_str)
+                        if (ip_obj.is_private or ip_obj.is_loopback or
+                            ip_obj.is_link_local or ip_obj.is_unspecified):
+                            raise ValueError(f"Access to restricted IP: {ip_str}")
+                except socket.gaierror:
+                    raise ValueError(f"DNS resolution failed for {host}")
+
+            with httpx.Client(event_hooks={'request': [validate_request_ip]}, follow_redirects=True) as client:
+                resp = client.get(target_url, headers=headers, timeout=5.0)
+
             return {
                 "status": "execution_successful",
                 "action": action,
