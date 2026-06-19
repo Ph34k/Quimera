@@ -1,0 +1,3 @@
+## 2024-06-19 - httpx Connection Pooling in Quimera Agents
+**Learning:** Quimera agents doing repetitive standalone HTTP requests via httpx.get() suffered from high latency and throughput overhead because each request created and destroyed a new TCP connection, bypassing the connection pooling capabilities of the httpx library.
+**Action:** When implementing standalone HTTP requests in agents (unlike those inherently handled by the OpenAI SDK), always instantiate and share a persistent, thread-safe httpx.Client() globally across the domain layer to enable robust connection pooling and improve performance.
