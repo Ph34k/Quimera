@@ -9,6 +9,7 @@ class BaseAgent(ABC):
         pass
 
 import httpx
+from app.core.security import get_safe_httpx_client
 import uuid
 
 class IScoutAgent(BaseAgent):
@@ -22,7 +23,8 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            with get_safe_httpx_client(timeout=5.0) as client:
+                response = client.get(target_url)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +89,8 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            with get_safe_httpx_client(headers=headers, timeout=5.0, follow_redirects=True) as client:
+                resp = client.get(target_url)
             return {
                 "status": "execution_successful",
                 "action": action,
