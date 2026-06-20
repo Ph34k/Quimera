@@ -8,8 +8,35 @@ class BaseAgent(ABC):
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         pass
 
+
 import httpx
 import uuid
+import ipaddress
+import socket
+
+def is_internal_ip(ip_str: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        # Security: block loopback, private, link-local, and unspecified (e.g., 0.0.0.0) to mitigate SSRF
+        return ip.is_loopback or ip.is_private or ip.is_link_local or ip.is_unspecified
+    except ValueError:
+        return False
+
+def check_ssrf(request: httpx.Request):
+    host = request.url.host
+    try:
+        # Resolve both IPv4 and IPv6 to prevent DNS rebinding / IPv6 bypasses
+        addr_info = socket.getaddrinfo(host, None)
+        for _, _, _, _, sockaddr in addr_info:
+            ip = sockaddr[0]
+            if is_internal_ip(ip):
+                raise ValueError(f"SSRF blocked: IP {ip} is internal.")
+    except socket.gaierror:
+        # Security: fail closed on DNS resolution errors
+        raise ValueError(f"SSRF blocked: Could not resolve hostname {host}.")
+
+# Create a globally shared, thread-safe secure client for connection pooling
+secure_client = httpx.Client(event_hooks={'request': [check_ssrf]})
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -22,7 +49,7 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            response = secure_client.get(target_url, timeout=5.0)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +114,7 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            resp = secure_client.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
             return {
                 "status": "execution_successful",
                 "action": action,
