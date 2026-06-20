@@ -9,7 +9,7 @@ class Settings:
 
     # API / Security
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "default_secret_key_for_dev")
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
 
     # Database
@@ -21,5 +21,11 @@ class Settings:
     # Cache / Search
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     ELASTICSEARCH_URL: str = os.getenv("ELASTICSEARCH_URL", "http://localhost:9200")
+
+    def __post_init__(self):
+        if not self.SECRET_KEY:
+            if self.ENVIRONMENT == "production":
+                raise ValueError("SECRET_KEY must be provided in production")
+            self.SECRET_KEY = "default_secret_key_for_dev"
 
 settings = Settings()
