@@ -10,6 +10,31 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import socket
+import ipaddress
+from typing import Dict, Any, Optional
+
+def _validate_ssrf(request: httpx.Request):
+    """Security: Prevent SSRF by validating resolved IP addresses at every request step (including redirects)."""
+    host = request.url.host
+    try:
+        addr_infos = socket.getaddrinfo(host, None)
+        for addr_info in addr_infos:
+            ip_str = addr_info[4][0]
+            ip_obj = ipaddress.ip_address(ip_str)
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+                raise httpx.RequestError(f"Security: Blocked access to internal IP {ip_str}", request=request)
+    except socket.gaierror:
+        raise httpx.RequestError(f"Security: DNS resolution failed for host {host}", request=request)
+
+class _SafeTransport(httpx.HTTPTransport):
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        _validate_ssrf(request)
+        return super().handle_request(request)
+
+# Security: Globally share httpx.Client with SSRF prevention and connection pooling
+_safe_client = httpx.Client(transport=_SafeTransport(), follow_redirects=True, timeout=5.0)
+
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -22,7 +47,8 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # Security: Use safe client to prevent SSRF
+            response = _safe_client.get(target_url)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +113,8 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # Security: Use safe client to prevent SSRF
+            resp = _safe_client.get(target_url, headers=headers)
             return {
                 "status": "execution_successful",
                 "action": action,
