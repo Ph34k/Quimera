@@ -68,3 +68,20 @@ def test_learning_agent():
     response2 = client.post("/api/v1/learning/check", json=payload)
     data2 = response2.json()["result"]
     assert data2["is_safe_to_engage"] is False
+
+
+def test_ssrf_scout_agent():
+    payload = {"target_url": "http://127.0.0.1:8000"}
+    response = client.post("/api/v1/scout/mission", json=payload)
+    data = response.json()
+    assert data["status"] == "failed"
+    assert "error" in data
+    assert "SSRF" in data["error"] or "Blocked" in data["error"]
+
+def test_ssrf_execution_agent():
+    payload = {"payload": {"action": "ping", "target_url": "http://localhost:8000"}}
+    response = client.post("/api/v1/execution/run", json=payload)
+    data = response.json()["result"]
+    assert data["status"] == "execution_failed"
+    assert "error" in data
+    assert "SSRF" in data["error"] or "Blocked" in data["error"]
