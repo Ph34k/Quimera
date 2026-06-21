@@ -9,6 +9,21 @@ class BaseAgent(ABC):
         pass
 
 import httpx
+
+import socket
+import ipaddress
+
+def _validate_ssrf(request: httpx.Request):
+    """Security: Prevent SSRF by validating the resolved IP of the request URL to block local/private network access."""
+    try:
+        addr_info = socket.getaddrinfo(request.url.host, None)
+        for info in addr_info:
+            ip = ipaddress.ip_address(info[4][0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_unspecified:
+                raise httpx.RequestError(f"SSRF Attempt: Blocked access to {ip}", request=request)
+    except (socket.gaierror, ValueError):
+        raise httpx.RequestError(f"DNS Resolution Failed or Invalid IP for {request.url.host}", request=request)
+
 import uuid
 
 class IScoutAgent(BaseAgent):
@@ -22,7 +37,9 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            # Security: Use SSRF validation hook to prevent local network access
+            with httpx.Client(event_hooks={'request': [_validate_ssrf]}) as client:
+                response = client.get(target_url, timeout=5.0)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +104,9 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            # Security: Use SSRF validation hook to prevent local network access during redirects
+            with httpx.Client(event_hooks={'request': [_validate_ssrf]}) as client:
+                resp = client.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
             return {
                 "status": "execution_successful",
                 "action": action,
