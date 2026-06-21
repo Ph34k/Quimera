@@ -10,6 +10,24 @@ class BaseAgent(ABC):
 
 import httpx
 import uuid
+import socket
+import ipaddress
+
+# Security Comment: Mitigate SSRF vulnerabilities by validating resolved IPs at each redirect step.
+# Block private, loopback, link-local, and unspecified IPs (e.g., 0.0.0.0, 127.0.0.1, 192.168.x.x)
+def _validate_ssrf(request: httpx.Request):
+    try:
+        addr_info = socket.getaddrinfo(request.url.host, None)
+    except socket.gaierror:
+        raise httpx.RequestError(f"DNS resolution failed for {request.url.host}", request=request)
+
+    for res in addr_info:
+        ip_str = res[4][0]
+        ip_obj = ipaddress.ip_address(ip_str)
+        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+            raise httpx.RequestError("Blocked due to SSRF protection", request=request)
+
+_safe_client = httpx.Client(event_hooks={'request': [_validate_ssrf]}, follow_redirects=True)
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -22,7 +40,7 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            response = _safe_client.get(target_url, timeout=5.0)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +105,7 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            resp = _safe_client.get(target_url, headers=headers, timeout=5.0)
             return {
                 "status": "execution_successful",
                 "action": action,
