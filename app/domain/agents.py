@@ -1,5 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any
+import httpx
+import uuid
+import socket
+import ipaddress
+
 
 class BaseAgent(ABC):
     """Abstract Base Class for all Quimera Agents."""
@@ -8,8 +13,26 @@ class BaseAgent(ABC):
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         pass
 
-import httpx
-import uuid
+
+def _validate_ssrf(request: httpx.Request):
+    """🛡️ Security enhancement: Validate resolved IPs to prevent SSRF vulnerabilities."""
+    host = request.url.host
+    try:
+        addr_info = socket.getaddrinfo(host, None)
+    except socket.gaierror:
+        raise httpx.RequestError(f"DNS resolution failed for {host}", request=request)
+
+    for res in addr_info:
+        ip_str = res[4][0]
+        try:
+            ip_obj = ipaddress.ip_address(ip_str)
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+                raise httpx.RequestError(f"Blocked SSRF attempt: internal IP {ip_str}", request=request)
+        except ValueError:
+            pass
+
+secure_http_client = httpx.Client(event_hooks={'request': [_validate_ssrf]}, follow_redirects=True)
+
 
 class IScoutAgent(BaseAgent):
     """Agente Batedor (Scout)
@@ -22,7 +45,7 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            response = secure_http_client.get(target_url, timeout=5.0)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +110,7 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            resp = secure_http_client.get(target_url, headers=headers, timeout=5.0)
             return {
                 "status": "execution_successful",
                 "action": action,
