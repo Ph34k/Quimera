@@ -8,7 +8,29 @@ class BaseAgent(ABC):
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         pass
 
+
+import socket
+import ipaddress
 import httpx
+from urllib.parse import urlparse
+
+def _validate_ssrf(request: httpx.Request):
+    # Security: SSRF mitigation. Prevent requests to internal/private IPs.
+    try:
+        host = request.url.host
+        # socket.getaddrinfo prevents IPv6 bypasses
+        for info in socket.getaddrinfo(host, None):
+            ip_str = info[4][0]
+            ip_obj = ipaddress.ip_address(ip_str)
+            # Block private, loopback, link-local, and unspecified (0.0.0.0)
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified:
+                raise httpx.RequestError(f"Blocked SSRF attempt to internal IP: {ip_str}", request=request)
+    except socket.gaierror:
+        # Security: Fail closed on DNS errors to prevent bypasses
+        raise httpx.RequestError(f"DNS resolution failed for {host}", request=request)
+
+secure_client = httpx.Client(event_hooks={'request': [_validate_ssrf]})
+
 import uuid
 
 class IScoutAgent(BaseAgent):
@@ -22,7 +44,7 @@ class IScoutAgent(BaseAgent):
 
         try:
             # MVP: Real HTTP request instead of mock
-            response = httpx.get(target_url, timeout=5.0)
+            response = secure_client.get(target_url, timeout=5.0)
             return {
                 "status": "success",
                 "mission_id": str(uuid.uuid4()),
@@ -87,7 +109,7 @@ class IExecutionAgent(BaseAgent):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         try:
-            resp = httpx.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
+            resp = secure_client.get(target_url, headers=headers, timeout=5.0, follow_redirects=True)
             return {
                 "status": "execution_successful",
                 "action": action,
