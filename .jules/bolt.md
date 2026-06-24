@@ -1,0 +1,3 @@
+## 2024-05-26 - Implement connection pooling for HTTP requests
+**Learning:** Singleton agents in `app/domain/agents.py` executing repetitive HTTP requests via `httpx.get` suffer from connection overhead for each request. Instantiating a persistent `httpx.Client` within the agent's `__init__` enables connection pooling, significantly reducing latency for sequential requests, especially when following redirects.
+**Action:** When implementing classes that make frequent HTTP requests and live beyond a single request cycle (like singleton domain agents), use a persistent `httpx.Client` bound to the instance rather than the top-level API functions. Ensure proper cleanup via `__del__` wrapped in a `try/except` block to prevent resource leak flags in code reviews.
