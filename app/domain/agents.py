@@ -49,6 +49,11 @@ if _openai_api_key == "sk-your-openai-api-key-here" or not _openai_api_key:
 else:
     client = OpenAI(api_key=_openai_api_key)
 
+def _verify_openai_client(agent_name: str) -> None:
+    """Verifies that the OpenAI client is initialized, raising ValueError otherwise."""
+    if not client:
+        raise ValueError(f"OPENAI_API_KEY is not set or is mock default. Cannot run actual {agent_name} logic.")
+
 class IAnalystAgent(BaseAgent):
     """Agente Analista (Analyst)
     Responsibility: Semantic Processing, Profile Analysis.
@@ -59,8 +64,7 @@ class IAnalystAgent(BaseAgent):
         if not text:
             raise ValueError("text is required for AnalystAgent")
 
-        if not client:
-            raise ValueError("OPENAI_API_KEY is not set or is mock default. Cannot run actual Analyst logic.")
+        _verify_openai_client("Analyst")
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -105,8 +109,7 @@ class IPersuasionAgent(BaseAgent):
         trigger = payload.get("trigger", "reciprocity")
         context = payload.get("context", "networking")
 
-        if not client:
-            raise ValueError("OPENAI_API_KEY is not set or is mock default. Cannot run actual Persuasion logic.")
+        _verify_openai_client("Persuasion")
 
         prompt = f"Write a short, persuasive message applying the Cialdini principle of '{trigger}' for the following context: '{context}'."
 
@@ -133,8 +136,7 @@ class IScribeAgent(BaseAgent):
         if not draft:
             raise ValueError("draft_text required for ScribeAgent")
 
-        if not client:
-            raise ValueError("OPENAI_API_KEY is not set or is mock default. Cannot run actual Scribe logic.")
+        _verify_openai_client("Scribe")
 
         prompt = f"Rewrite the following draft to match the confident, direct persona of 'Alex'. Draft: {draft}"
 
