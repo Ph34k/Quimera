@@ -1,0 +1,3 @@
+## 2024-05-15 - Persistent Connection Pooling in Singletons
+**Learning:** Initializing an HTTP client per request in agent execute loops bypasses connection pooling, leading to TCP handshakes for every outbound request. Since agents are singleton instances across the FastAPI app, the internal persistent HTTP connection pool isn't realized without configuring the `httpx.Client` internally.
+**Action:** Always instantiate `httpx.Client()` in the `__init__` method of domain agents inheriting from `BaseAgent` and call `super().__init__(*args, **kwargs)` to safely inject a resilient connection pool across execute invocations. Explicitly destroy the pool in `__del__`.
