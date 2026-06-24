@@ -1,0 +1,3 @@
+## 2024-05-18 - Persistent HTTPx Clients in Agents
+**Learning:** Agent instances are singletons in `app/api/router.py`, meaning we can significantly improve external API call performance by maintaining persistent `httpx.Client` objects within the agents instead of creating a new client per request.
+**Action:** When working with agent-based requests via `httpx`, override `__init__` and initialize a persistent `httpx.Client()` to leverage connection pooling. Remember to call `super().__init__()` when inheriting from `BaseAgent` to ensure base class initialization logic is executed and regressions are avoided.
