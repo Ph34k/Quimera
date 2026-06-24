@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Optional
 from typing import Any, Dict
+from app.core.config import settings
 from app.domain.agents import (
     IScoutAgent, IAnalystAgent, IExecutionAgent,
     IPersuasionAgent, IScribeAgent, ILearningAgent
@@ -33,13 +35,24 @@ class ScoutMissionResponse(BaseModel):
     content_length: Optional[int] = None
     error: Optional[str] = None
 
+security = HTTPBearer()
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if credentials.credentials != settings.SECRET_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return credentials.credentials
+
 @api_router.get("/health")
 def health_check():
     """Health check endpoint to verify the API is running."""
     return {"status": "healthy"}
 
 @api_router.post("/scout/mission", response_model=ScoutMissionResponse)
-def dispatch_scout_mission(request: ScoutMissionRequest):
+def dispatch_scout_mission(request: ScoutMissionRequest, token: str = Depends(verify_token)):
     """
     Despacha o Agente Batedor (Scout) para analisar um alvo executando uma chamada real.
     """
