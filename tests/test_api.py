@@ -17,14 +17,14 @@ def test_health_check():
 
 def test_scout_mission_dispatch():
     payload = {
-        "target_url": "https://httpbin.org/get",
+        "target_url": "https://example.com",
         "depth": 2
     }
     response = client.post("/api/v1/scout/mission", json=payload)
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "success"
-    assert data["target"] == "https://httpbin.org/get"
+    assert data["target"] == "https://example.com"
     assert "mission_id" in data
     assert data["http_status"] == 200
     assert data["content_length"] > 0
@@ -38,7 +38,7 @@ def test_analyst_agent():
     assert "Cannot run actual Analyst logic" in response.json()["detail"]
 
 def test_execution_agent():
-    payload = {"payload": {"action": "ping", "target_url": "https://httpbin.org/status/200"}}
+    payload = {"payload": {"action": "ping", "target_url": "https://example.com"}}
     response = client.post("/api/v1/execution/run", json=payload)
     assert response.status_code == 200
     data = response.json()["result"]
