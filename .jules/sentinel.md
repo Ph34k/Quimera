@@ -1,4 +1,4 @@
-## 2026-05-27 - Elasticsearch Security
-**Vulnerability:** Disabled Elasticsearch security (xpack.security.enabled=false).
-**Learning:** Elasticsearch should have security enabled to prevent unauthorized access to data.
-**Prevention:** Always set xpack.security.enabled=true and configure credentials.
+## 2024-06-28 - Mitigation of SSRF in HTTPX Clients
+**Vulnerability:** Server-Side Request Forgery (SSRF) allowed in the `IScoutAgent` and `IExecutionAgent` classes. They used `httpx.get` to hit arbitrary user-supplied URLs without any validation of where the domain resolves.
+**Learning:** `socket.gethostbyname` is insufficient to validate addresses as it fails to check IPv6, leading to potential IPv6 bypasses. Additionally, using standard pre-request validation doesn't protect against malicious redirects pointing to internal IPs. A robust solution needs to use `socket.getaddrinfo` for comprehensive IPv4/IPv6 address checking, and this check must be attached as an `event_hook` on the `httpx.Client` to securely evaluate each request even during redirects.
+**Prevention:** Always validate resolved IPs via `httpx.Client(event_hooks={'request': [_validate_ssrf]})` instead of standard `httpx.get` when working with user-supplied URLs, and use `getaddrinfo` to catch both IPv4 and IPv6 loopback, private, multicast, and link-local ranges.
